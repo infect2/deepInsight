@@ -1,0 +1,32 @@
+{
+  "name": "deepinsight",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/infect2/deepInsight.git"
+  },
+  "author": "sangseok lim",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/infect2/deepInsight/issues"
+  },
+  "homepage": "https://github.com/infect2/deepInsight#readme",
+  "dependencies": {
+    "express": "^4.15.4",
+    "express-handlebars": "^3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.1",
+    "grunt": "^1.0.1",
+    "grunt-cafe-mocha": "^0.1.13",
+    "grunt-contrib-jshint": "^1.1.0",
+    "grunt-exec": "^3.0.0",
+    "mocha": "^3.5.0",
+    "zombie": "^5.0.7"
+  }
+}
