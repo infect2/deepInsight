@@ -15,7 +15,7 @@ module.exports = function(grunt){
 			all: { src: 'qa/tests-*.js', options: { ui: 'tdd' }, }
 		},
 		jshint: {
-			app: ['app.js', 'public/js/**/*.js', 'lib/**/*.js'],
+			app: ['app.js', 'public/js/*.js', 'lib/**/*.js'],
 			qa: ['Gruntfile.js', 'public/qa/**/*.js', 'qa/**/*.js'],
 		},
 		exec: {
