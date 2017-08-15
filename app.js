@@ -7,6 +7,7 @@ var connect = require('connect');
 var compression = require('compression');
 var fs = require('fs');
 var email = require('./lib/email.js');
+var mongoose = require('mongoose');
 var emailService = email(credentials);
 
 var app = express();
@@ -72,16 +73,26 @@ app.use(function(req, res, next){
 
 app.set('port', process.env.PORT || 3000);
 
+var opts = {
+  server: {
+    socketOptions: {keepAlive: 1}
+  }
+};
+
 //logger setting
 switch(app.get('env')){
   case 'development':
     app.use(require('morgan')('dev'));
+    // mongoose.connect(credentials.mongo.development, connectionString, opts);
     break;
   case 'production':
+    // mongoose.connect(credentials.mongo.development, connectionString, opts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
     }));
     break;
+  default:
+    throw new Error('Unknown execution environment: ' + app.get('env'));
 }
 
 //test page support. it should be placed in front of other routers

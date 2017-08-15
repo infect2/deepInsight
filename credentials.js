@@ -6,10 +6,10 @@ module.exports = {
 	},
 	mongo: {
 		development: {
-			connectionString: "lss941102@0",
+			connectionString: "mongodb://localhost",
 		},
 		production: {
-			connectionString: "lss941102@0"
+			connectionString: "mongodb://localhost"
 		}
 	}
 }
