@@ -5,6 +5,7 @@ var formidable = require('formidable');
 var credentials = require('./credentials.js');
 var connect = require('connect');
 var compression = require('compression');
+var fs = require('fs');
 var email = require('./lib/email.js');
 var emailService = email(credentials);
 
@@ -23,6 +24,51 @@ var handlebars = require('express-handlebars').create({
 });
 app.engine('handlebars', handlebars.engine);
 app.set('view engine','handlebars');
+
+// use domains for better error handling
+app.use(function(req, res, next){
+    // create a domain for this request
+    var domain = require('domain').create();
+    // handle errors on this domain
+    domain.on('error', function(err){
+        console.error('DOMAIN ERROR CAUGHT\n', err.stack);
+        try {
+            // failsafe shutdown in 5 seconds
+            setTimeout(function(){
+                console.error('Failsafe shutdown.');
+                process.exit(1);
+            }, 5000);
+
+            // disconnect from the cluster
+            var worker = require('cluster').worker;
+            if(worker) worker.disconnect();
+
+            // stop taking new requests
+            server.close();
+
+            try {
+                // attempt to use Express error route
+                next(err);
+            } catch(error){
+                // if Express error route failed, try
+                // plain Node response
+                console.error('Express error mechanism failed.\n', error.stack);
+                res.statusCode = 500;
+                res.setHeader('content-type', 'text/plain');
+                res.end('Server error.');
+            }
+        } catch(error){
+            console.error('Unable to send 500 response.\n', error.stack);
+        }
+    });
+
+    // add the request and response objects to the domain
+    domain.add(req);
+    domain.add(res);
+
+    // execute the rest of the request chain in the domain
+    domain.run(next);
+});
 
 app.set('port', process.env.PORT || 3000);
 
@@ -218,6 +264,16 @@ app.get('/contest/vacation-photo', function(req, res){
     res.render('contest/vacation-photo', { year: now.getFullYear(), month: now.getMonth() });
 });
 
+// make sure data directory exists
+var dataDir = __dirname + '/data';
+var vacationPhotoDir = dataDir + '/vacation-photo';
+if(!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+if(!fs.existsSync(vacationPhotoDir)) fs.mkdirSync(vacationPhotoDir);
+
+function saveContestEntry(contestName, email, year, month, photoPath){
+    // TODO...this will come later
+}
+
 app.post('/contest/vacation-photo/:year/:month', function(req, res){
     var form = new formidable.IncomingForm();
     form.parse(req, function(err, fields, files){ 
@@ -228,6 +284,20 @@ app.post('/contest/vacation-photo/:year/:month', function(req, res){
         console.log(files);
         res.redirect(303, '/thank-you');
     });
+});
+
+app.get('/contest/vacation-photo/entries', function(req, res){
+        res.render('contest/vacation-photo/entries');
+});
+
+app.get('/fail', function(req, res){
+  throw new Error("Intended!");
+});
+
+app.get('/epic-fail', function(req, res){
+  process.nextTick(function(){
+    throw new Error("Disatster!");    
+  });
 });
 
 app.use(function(req, res){
@@ -242,7 +312,6 @@ app.use(function(err, req,res, next){
   res.render('500');
   emailService.send('infect2@hanmail.net', 'Service Alert', 'Internal Server Error');
 });
-
 
 var server;
 
