@@ -4,6 +4,7 @@ var formidable = require('formidable');
 var credentials = require('./credentials.js');
 var connect = require('connect');
 var compression = require('compression');
+var email = require('./lib/email.js');
 
 var app = express();
 
@@ -156,8 +157,9 @@ app.post('/process', function(req, res){
 // for now, we're mocking NewsletterSignup:
 function NewsletterSignup(){
 }
+
 NewsletterSignup.prototype.save = function(cb){
-        cb();
+  cb();
 };
 
 var VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
@@ -225,3 +227,6 @@ app.use(function(err, req,res, next){
 app.listen(app.get('port'), function(){
   console.log('Express started on http://localhost' + app.get('port'));
 });
+
+var transport = email(credentials);
+transport.send('infect2@hanmail.net', 'Service Alert', 'Express Server just Started');
