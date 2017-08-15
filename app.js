@@ -2,6 +2,9 @@ var express = require('express');
 var fortune = require('./lib/fortune.js');
 var formidable = require('formidable');
 var credentials = require('./credentials.js');
+var connect = require('connect');
+var compression = require('compression');
+
 var app = express();
 
 //view engine, or handlebars setting
@@ -77,6 +80,9 @@ app.use(require('express-session')({
   secret: credentials.cookieSecret
 }));
 
+//gzip compression
+app.use(compression());
+
 // flash message middleware
 app.use(function(req, res, next){
         // if there's a flash message, transfer
@@ -84,6 +90,11 @@ app.use(function(req, res, next){
         res.locals.flash = req.session.flash;
         delete req.session.flash;
         next();
+});
+
+app.use(function(req, res, next){
+  console.log('processing request for ' + req.url + '...');
+  next();
 });
 
 app.get('/', function(req, res){

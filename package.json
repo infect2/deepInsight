@@ -18,6 +18,8 @@
   "homepage": "https://github.com/infect2/deepInsight#readme",
   "dependencies": {
     "body-parser": "^1.17.2",
+    "compression": "^1.7.0",
+    "connect": "^3.6.3",
     "cookie-parser": "^1.4.3",
     "express": "^4.15.4",
     "express-handlebars": "^3.0.0",
