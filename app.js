@@ -281,6 +281,43 @@ app.get('/data/nursery-rhyme', function(req, res){
 app.get('/thank-you', function(req, res){
         res.render('thank-you');
 });
+
+//login page
+app.get('/login', function(req, res){
+    res.render('login', { csrf: 'CSRF token goes here' });
+});
+
+app.post('/login', function(req, res){
+  var userId = req.body.userId || '',
+      password = req.body.password || '';
+  console.log("ID: %s, Password %s", userId, password);
+  if(req.xhr) {
+    return res.json({ success: true });
+  } else {
+    return res.redirect(303, '/home');
+  }
+});
+
+//register page
+app.get('/register', function(req, res){
+    res.render('register', { csrf: 'CSRF token goes here' });
+});
+
+app.post('/register', function(req, res){
+  var userId = req.body.userId || '',
+      password1 = req.body.password1 || '',
+      password2 = req.body.password2 || '';
+  console.log("ID: %s, Password %s : %s", userId, password1, password2);
+  if(password1 !== password2) {
+    console.log("Passwords are not equal");
+  }
+  if(req.xhr) {
+    return res.json({ success: true });
+  } else {
+    return res.redirect(303, '/home');
+  }
+});
+
 app.get('/newsletter', function(req, res){
     // we will learn about CSRF later...for now, we just 
     // provide a dummy value

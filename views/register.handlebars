@@ -1,0 +1,59 @@
+<div class="formContainer">
+    <form class="form-horizontal localRegisterForm" role="form" 
+            action="/register?form=register" method="POST">
+        <input type="hidden" name="_csrf" value="{{_csrfToken}}">
+        <div class="form-group">
+            <label for="fieldName" class="col-sm-2 control-label">ID</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" 
+                id="fieldName" name="userId">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="fieldEmail" class="col-sm-2 control-label">Password</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" required 
+                    id="fieldPassword1" name="password1">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="fieldEmail" class="col-sm-2 control-label">Password</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" required 
+                    id="fieldPassword2" name="password2">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-4">
+                <button type="submit" class="btn btn-default">Register</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{{#section 'jquery'}}
+    <script>
+        $(document).ready(function(){
+            $('.localRegisterForm').on('submit', function(evt){
+                evt.preventDefault();
+                var action = $(this).attr('action');
+                var $container = $(this).closest('.formContainer');
+                $.ajax({
+                    url: action,
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(data){
+                        if(data.success){
+                            $container.html('<h2>Login Succeeded</h2>');
+                        } else {
+                            $container.html('There was a problem.');
+                        }
+                    },
+                    error: function(){
+                        $container.html('There was a problem.');
+                    }
+                });
+            });
+        });
+    </script>
+{{/section}}
