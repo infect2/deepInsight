@@ -506,12 +506,31 @@ app.get('/unauthorized', function(req, res) {
         res.status(403).render('unauthorized');
 });
 
+// customer routes
+
+app.get('/account', allow('customer,employee'), function(req, res){
+        res.render('account', { username: req.user.name });
+});
+app.get('/account/order-history', customerOnly, function(req, res){
+        res.render('account/order-history');
+});
+app.get('/account/email-prefs', customerOnly, function(req, res){
+        res.render('account/email-prefs');
+});
+
+// employer routes
+app.get('/sales', employeeOnly, function(req, res){
+        res.render('sales');
+});
+
+// 404 not found
 app.use(function(req, res){
   res.status(404);
   res.render('404');
   emailService.send('infect2@hanmail.net', 'Service Alert', '404 Not Found');
 });
 
+// 500 internal server error
 app.use(function(err, req,res, next){
   console.error(err.stack);
   res.status(500);
