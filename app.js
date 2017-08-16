@@ -12,6 +12,7 @@ var mongoose = require('mongoose');
 var emailService = email(credentials);
 var Vacation = require('./models/vacation.js');
 var VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
+var Dealer = require('./models/dealer.js');
 
 var app = express();
 
@@ -463,6 +464,157 @@ app.get('/api/attractions', function(req, res){
     });
 });
 
+// initialize dealers
+Dealer.find({}, function(err, dealers){
+    if(dealers.length) return;
+
+        new Dealer({
+                name: 'Oregon Novelties',
+                address1: '912 NW Davis St',
+                city: 'Portland',
+                state: 'OR',
+                zip: '97209',
+                country: 'US',
+                phone: '503-555-1212',
+                active: true,
+        }).save();
+
+        new Dealer({
+                name: 'Bruce\'s Bric-a-Brac',
+                address1: '159 Beeswax Ln',
+                city: 'Manzanita',
+                state: 'OR',
+                zip: '97209',
+                country: 'US',
+                phone: '503-555-1212',
+                active: true,
+        }).save();
+
+        new Dealer({
+                name: 'Aunt Beru\'s Oregon Souveniers',
+                address1: '544 NE Emerson Ave',
+                city: 'Bend',
+                state: 'OR',
+                zip: '97701',
+                country: 'US',
+                phone: '503-555-1212',
+                active: true,
+        }).save();
+
+        new Dealer({
+                name: 'Oregon Goodies',
+                address1: '1353 NW Beca Ave',
+                city: 'Corvallis',
+                state: 'OR',
+                zip: '97330',
+                country: 'US',
+                phone: '503-555-1212',
+                active: true,
+        }).save();
+
+        new Dealer({
+                name: 'Oregon Grab-n-Fly',
+                address1: '7000 NE Airport Way',
+                city: 'Portland',
+                state: 'OR',
+                zip: '97219',
+                country: 'US',
+                phone: '503-555-1212',
+                active: true,
+        }).save();
+});
+
+// dealer geocoding
+function geocodeDealer(dealer){
+    var addr = dealer.getAddress(' ');
+    if(addr===dealer.geocodedAddress) return;   // already geocoded
+
+    if(dealerCache.geocodeCount >= dealerCache.geocodeLimit){
+        // has 24 hours passed since we last started geocoding?
+        if(Date.now() > dealerCache.geocodeCount + 24 * 60 * 60 * 1000){
+            dealerCache.geocodeBegin = Date.now();
+            dealerCache.geocodeCount = 0;
+        } else {
+            // we can't geocode this now: we've
+            // reached our usage limit
+            return;
+        }
+    }
+
+        var geocode = require('./lib/geocode.js');
+    geocode(addr, function(err, coords){
+        if(err) return console.log('Geocoding failure for ' + addr);
+        dealer.lat = coords.lat;
+        dealer.lng = coords.lng;
+        dealer.save();
+    });
+}
+
+// optimize performance of dealer display
+function dealersToGoogleMaps(dealers){
+    var js = 'function addMarkers(map){\n' +
+        'var markers = [];\n' +
+        'var Marker = google.maps.Marker;\n' +
+        'var LatLng = google.maps.LatLng;\n';
+    dealers.forEach(function(d){
+        var name = d.name.replace(/'/, '\\\'')
+            .replace(/\\/, '\\\\');
+        js += 'markers.push(new Marker({\n' +
+                '\tposition: new LatLng(' +
+                    d.lat + ', ' + d.lng + '),\n' +
+                '\tmap: map,\n' +
+                '\ttitle: \'' + name.replace(/'/, '\\') + '\',\n' +
+            '}));\n';
+    });
+    js += '}';
+    return js;
+}
+
+// dealer cache
+var dealerCache = {
+    lastRefreshed: 0,
+    refreshInterval: 60 * 60 * 1000,
+    jsonUrl: '/dealers.json',
+    geocodeLimit: 2000,
+    geocodeCount: 0,
+    geocodeBegin: 0,
+};
+
+dealerCache.jsonFile = __dirname + '/public' + dealerCache.jsonUrl;
+
+dealerCache.refresh = function(cb){
+
+    if(Date.now() > dealerCache.lastRefreshed + dealerCache.refreshInterval){
+        // we need to refresh the cache
+        Dealer.find({ active: true }, function(err, dealers){
+            if(err) return console.log('Error fetching dealers: '+
+                 err);
+
+            // geocodeDealer will do nothing if coordinates are up-to-date
+            dealers.forEach(geocodeDealer);
+
+            // we now write all the dealers out to our cached JSON file
+            fs.writeFileSync(dealerCache.jsonFile, JSON.stringify(dealers));
+
+                        fs.writeFileSync(__dirname + '/public/js/dealers-googleMapMarkers.js', dealersToGoogleMaps(dealers));
+
+            // all done -- invoke callback
+            cb();
+        });
+    }
+
+};
+function refreshDealerCacheForever(){
+    dealerCache.refresh(function(){
+        // call self after refresh interval
+        setTimeout(refreshDealerCacheForever,
+            dealerCache.refreshInterval);
+    });
+}
+// create empty cache if it doesn't exist to prevent 404 errors
+if(!fs.existsSync(dealerCache.jsonFile)) fs.writeFileSync(JSON.stringify([]));
+// start refreshing cache
+//refreshDealerCacheForever();
 
 //Authentication
 var auth = require('./lib/auth.js')(app, {
