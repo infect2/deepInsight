@@ -20,7 +20,9 @@
     "body-parser": "^1.17.2",
     "compression": "^1.7.0",
     "connect": "^3.6.3",
+    "connect-rest": "^2.12.6",
     "cookie-parser": "^1.4.3",
+    "cors": "^2.8.4",
     "express": "^4.15.4",
     "express-handlebars": "^3.0.0",
     "express-logger": "0.0.3",
@@ -28,8 +30,11 @@
     "formidable": "^1.1.1",
     "loadtest": "^2.3.0",
     "mongoose": "^4.11.7",
+    "mongoose-session": "0.0.4",
     "morgan": "^1.8.2",
-    "nodemailer": "^0.7.1"
+    "nodemailer": "^0.7.1",
+    "session-mongoose": "^0.5.2",
+    "vhost": "^3.0.2"
   },
   "devDependencies": {
     "chai": "^4.1.1",
@@ -38,6 +43,7 @@
     "grunt-contrib-jshint": "^1.1.0",
     "grunt-exec": "^3.0.0",
     "mocha": "^3.5.0",
+    "restler": "^3.4.0",
     "zombie": "^5.0.7"
   }
 }

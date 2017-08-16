@@ -1,4 +1,5 @@
 var http = require('http');
+var https = require('https');
 var express = require('express');
 var fortune = require('./lib/fortune.js');
 var formidable = require('formidable');
@@ -9,6 +10,8 @@ var fs = require('fs');
 var email = require('./lib/email.js');
 var mongoose = require('mongoose');
 var emailService = email(credentials);
+var Vacation = require('./models/vacation.js');
+var VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
 
 var app = express();
 
@@ -83,10 +86,10 @@ var opts = {
 switch(app.get('env')){
   case 'development':
     app.use(require('morgan')('dev'));
-    // mongoose.connect(credentials.mongo.development, connectionString, opts);
+    mongoose.connect(credentials.mongo.development.connectionString, opts);
     break;
   case 'production':
-    // mongoose.connect(credentials.mongo.development, connectionString, opts);
+    mongoose.connect(credentials.mongo.development.connectionString, opts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
     }));
@@ -94,6 +97,64 @@ switch(app.get('env')){
   default:
     throw new Error('Unknown execution environment: ' + app.get('env'));
 }
+
+// CORS for API support
+app.use('/api', require('cors')());
+
+//mongodb based session store
+var MongoSessionStore = require('mongoose-session')(mongoose);
+
+// initialize vacations
+Vacation.find(function(err, vacations){
+    if(vacations.length) {
+      return;
+    }
+
+    new Vacation({
+        name: 'Hood River Day Trip',
+        slug: 'hood-river-day-trip',
+        category: 'Day Trip',
+        sku: 'HR199',
+        description: 'Spend a day sailing on the Columbia and ' +
+            'enjoying craft beers in Hood River!',
+        priceInCents: 9995,
+        tags: ['day trip', 'hood river', 'sailing', 'windsurfing', 'breweries'],
+        inSeason: true,
+        maximumGuests: 16,
+        available: true,
+        packagesSold: 0,
+    }).save();
+
+    new Vacation({
+        name: 'Oregon Coast Getaway',
+        slug: 'oregon-coast-getaway',
+        category: 'Weekend Getaway',
+        sku: 'OC39',
+        description: 'Enjoy the ocean air and quaint coastal towns!',
+        priceInCents: 269995,
+        tags: ['weekend getaway', 'oregon coast', 'beachcombing'],
+        inSeason: false,
+        maximumGuests: 8,
+        available: true,
+        packagesSold: 0,
+    }).save();
+
+    new Vacation({
+        name: 'Rock Climbing in Bend',
+        slug: 'rock-climbing-in-bend',
+        category: 'Adventure',
+        sku: 'B99',
+        description: 'Experience the thrill of rock climbing in the high desert.',
+        priceInCents: 289995,
+        tags: ['weekend getaway', 'bend', 'high desert', 'rock climbing', 'hiking', 'skiing'],
+        inSeason: true,
+        requiresWaiver: true,
+        maximumGuests: 4,
+        available: false,
+        packagesSold: 0,
+        notes: 'The tour guide is currently recovering from a skiing accident.',
+    }).save();
+});
 
 //test page support. it should be placed in front of other routers
 app.use(function(req, res, next){
@@ -149,7 +210,8 @@ app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')({
   resave: false,
   saveUninitialized: false,
-  secret: credentials.cookieSecret
+  secret: credentials.cookieSecret,
+  store: MongoSessionStore
 }));
 
 //gzip compression
@@ -301,6 +363,74 @@ app.get('/contest/vacation-photo/entries', function(req, res){
         res.render('contest/vacation-photo/entries');
 });
 
+app.get('/set-currency/:currency', function(req,res){
+    req.session.currency = req.params.currency;
+    return res.redirect(303, '/vacations');
+});
+
+function convertFromUSD(value, currency){
+    switch(currency){
+        case 'USD': return value * 1;
+        case 'GBP': return value * 0.6;
+        case 'BTC': return value * 0.0023707918444761;
+        default: return NaN;
+    }
+}
+
+app.get('/vacations', function(req, res){
+    Vacation.find({ available: true }, function(err, vacations){
+        var currency = req.session.currency || 'USD';
+        var context = {
+            currency: currency,
+            vacations: vacations.map(function(vacation){
+                return {
+                    sku: vacation.sku,
+                    name: vacation.name,
+                    description: vacation.description,
+                    inSeason: vacation.inSeason,
+                    price: convertFromUSD(vacation.priceInCents/100, currency),
+                    qty: vacation.qty,
+                };
+            })
+        };
+        switch(currency){
+                case 'USD': context.currencyUSD = 'selected'; break;
+                case 'GBP': context.currencyGBP = 'selected'; break;
+                case 'BTC': context.currencyBTC = 'selected'; break;
+            }
+        res.render('vacations', context);
+    });
+});
+
+app.get('/notify-me-when-in-season', function(req, res){
+    res.render('notify-me-when-in-season', { sku: req.query.sku });
+});
+
+app.post('/notify-me-when-in-season', function(req, res){
+    VacationInSeasonListener.update(
+        { email: req.body.email },
+        { $push: { skus: req.body.sku } },
+        { upsert: true },
+            function(err){
+                if(err) {
+                        console.error(err.stack);
+                    req.session.flash = {
+                        type: 'danger',
+                        intro: 'Ooops!',
+                        message: 'There was an error processing your request.',
+                    };
+                    return res.redirect(303, '/vacations');
+                }
+                req.session.flash = {
+                    type: 'success',
+                    intro: 'Thank you!',
+                    message: 'You will be notified when this vacation is in season.',
+                };
+                return res.redirect(303, '/vacations');
+            }
+        );
+});
+
 app.get('/fail', function(req, res){
   throw new Error("Intended!");
 });
@@ -310,6 +440,24 @@ app.get('/epic-fail', function(req, res){
     throw new Error("Disatster!");    
   });
 });
+
+//REST API
+var Attraction = require('./models/attraction.js');
+
+app.get('/api/attractions', function(req, res){
+    Attraction.find({ approved: true }, function(err, attractions){
+        if(err) return res.status(500).send('Error Occurred: DB');
+        res.json(attractions.map(function(a){
+            return {
+                name: a.name,
+                id: a._id,
+                description: a.description,
+                location: a.location,
+            };
+        }));
+    });
+});
+
 
 app.use(function(req, res){
   res.status(404);
@@ -325,9 +473,13 @@ app.use(function(err, req,res, next){
 });
 
 var server;
+var options = {
+  key: fs.readFileSync(__dirname + '/keys/deepinsight.pem'),
+  cert: fs.readFileSync(__dirname + '/keys/deepinsight.crt')
+};
 
 function startServer() {
-    server = http.createServer(app).listen(app.get('port'), function(){
+    server = https.createServer(options, app).listen(app.get('port'), function(){
       console.log( 'Express started in ' + app.get('env') +
         ' mode on http://localhost:' + app.get('port') +
         '; press Ctrl-C to terminate.' );
