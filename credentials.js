@@ -11,5 +11,28 @@ module.exports = {
     production: {
       connectionString: "mongodb://172.17.0.2:27017/test"
     }
+  },
+  authProviders: {
+    facebook: {
+      development: {
+        appId: '119877515330437',
+        appSecret: 'b4c37009cc1dbaebe0e49800eb5407b4'
+      },
+      production: {
+        appId: '119877515330437',
+        appSecret: 'b4c37009cc1dbaebe0e49800eb5407b4'
+      }
+    },
+    google: {
+      development: {
+        appId: 'deepinsight_app_id',
+        appSecret: 'deepinsight_app_secret'
+      },
+      production: {
+        appId: 'deepinsight_app_id',
+        appSecret: 'deepinsight_app_secret'
+      }
+    }
+
   }
 }
