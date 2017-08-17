@@ -303,20 +303,8 @@ app.get('/login', function(req, res){
     res.render('login', { csrf: 'CSRF token goes here' });
 });
 
-//login by LocalStrategy
-// app.post('/login',
-//   // passport.authenticate('local', {failureRedirect: '/login'}),
-//   function(req, res){
-//     var userId = req.body.userId || '',
-//         password = req.body.password || '';
-//     console.log("ID: %s, Password %s", userId, password);
-//     if(req.xhr) {
-//       return res.json({ success: true });
-//     } else {
-//       return res.redirect(303, '/account');
-//     }
-// });
-
+//FIX ME
+//ajax based login will not work with redirect
 app.post('/login',
   passport.authenticate('local', {failureRedirect: '/login'}),
   function(req, res){
@@ -327,7 +315,14 @@ app.post('/login',
     }
 });
 
-//new commernregister page
+//logout
+app.get('/logout', function(req, res){
+  req.logout();
+  req.session.destroy();
+  res.redirect("/login");
+});
+
+//new commer register page
 app.get('/register', function(req, res){
     res.render('register', { csrf: 'CSRF token goes here' });
 });
