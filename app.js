@@ -13,6 +13,8 @@ var emailService = email(credentials);
 var Vacation = require('./models/vacation.js');
 var VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
 var Dealer = require('./models/dealer.js');
+var User = require('./models/user.js');
+var LocalStrategy = require('passport-local').Strategy;
 
 var app = express();
 
@@ -282,11 +284,12 @@ app.get('/thank-you', function(req, res){
         res.render('thank-you');
 });
 
-//login page
+//login page display
 app.get('/login', function(req, res){
     res.render('login', { csrf: 'CSRF token goes here' });
 });
 
+//login by LocalStrategy
 app.post('/login', function(req, res){
   var userId = req.body.userId || '',
       password = req.body.password || '';
@@ -298,24 +301,74 @@ app.post('/login', function(req, res){
   }
 });
 
-//register page
+//new commernregister page
 app.get('/register', function(req, res){
     res.render('register', { csrf: 'CSRF token goes here' });
 });
 
+function ensureAuthenticatedP(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('login');
+}
+//check if user typed id is valid by uniquness and naming policy
+function validateID(userId){
+  console.log("Fix Me: validateID");
+  return true;
+}
+
+function validatePassword(passwd){
+  console.log("Fix Me: validatePassword");
+  return true;
+}
+
+function addNewUser(authId, password, displayName, role, doneCB){
+  var user = new User({
+    authId: "deepinsight" + authId,
+    name: displayName,
+    password: password,
+    created: Date.now(),
+    role: role,
+  });
+  user.save(function(err){
+    if(err) {
+      return doneCB(err, null);
+    }
+    doneCB(null, user);
+  });  
+}
+//add a new user to user DB
 app.post('/register', function(req, res){
+  var response;
   var userId = req.body.userId || '',
       password1 = req.body.password1 || '',
       password2 = req.body.password2 || '';
-  console.log("ID: %s, Password %s : %s", userId, password1, password2);
+  console.log('ID: %s, Password %s : %s', userId, password1, password2);
+
+  //ID and Password are validated
   if(password1 !== password2) {
-    console.log("Passwords are not equal");
+    response = 'Passwords are not equal';
+    console.log(response);
   }
-  if(req.xhr) {
-    return res.json({ success: true });
-  } else {
-    return res.redirect(303, '/home');
+  if(!validateID(userId)) {
+    response = 'User ID is wrong, Please Try with different ID';
+    console.log(response);
   }
+  if(!validatePassword(password1)) {
+    response = 'password policy is broken, try with different password';
+    console.log(response);
+  }
+
+  //ready to add a user to MongoDB
+  addNewUser(userId, password1, 'Nickname', 'customer', function(err, user){
+    if(req.xhr) {
+      return res.json({ success: (err)? false : true });
+    } else {
+      return res.redirect(303, '/account');
+    }
+  });
+
 });
 
 app.get('/newsletter', function(req, res){

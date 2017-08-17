@@ -3,6 +3,7 @@ var mongoose = require('mongoose');
 var userSchema = mongoose.Schema({
 	authId: String, //user's unique ID for authentication
 	name: String,
+	password: String,
 	email: String,
 	role: String,
 	created: Date,

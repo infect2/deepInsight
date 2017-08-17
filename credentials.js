@@ -33,6 +33,5 @@ module.exports = {
         appSecret: 'deepinsight_app_secret'
       }
     }
-
   }
 }
