@@ -14,6 +14,7 @@ var Vacation = require('./models/vacation.js');
 var VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
 var Dealer = require('./models/dealer.js');
 var User = require('./models/user.js');
+var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 
 var app = express();
@@ -242,6 +243,19 @@ app.use(function(req, res, next){
   next();
 });
 
+//Authentication
+var auth = require('./lib/auth.js')(app, {
+        baseUrl: process.env.BASE_URL,
+        providers: credentials.authProviders,
+        successRedirect: '/account',
+        failureRedirect: '/unauthorized',
+});
+// auth.init() links in Passport middleware:
+auth.init();
+
+// now we can specify our auth routes:
+auth.registerRoutes();
+
 app.get('/', function(req, res){
   res.cookie('sangseoklim', "handsome", { signed: true });
   res.render('home');
@@ -290,15 +304,27 @@ app.get('/login', function(req, res){
 });
 
 //login by LocalStrategy
-app.post('/login', function(req, res){
-  var userId = req.body.userId || '',
-      password = req.body.password || '';
-  console.log("ID: %s, Password %s", userId, password);
-  if(req.xhr) {
-    return res.json({ success: true });
-  } else {
-    return res.redirect(303, '/home');
-  }
+// app.post('/login',
+//   // passport.authenticate('local', {failureRedirect: '/login'}),
+//   function(req, res){
+//     var userId = req.body.userId || '',
+//         password = req.body.password || '';
+//     console.log("ID: %s, Password %s", userId, password);
+//     if(req.xhr) {
+//       return res.json({ success: true });
+//     } else {
+//       return res.redirect(303, '/account');
+//     }
+// });
+
+app.post('/login',
+  passport.authenticate('local', {failureRedirect: '/login'}),
+  function(req, res){
+    if(req.xhr) {
+      return res.json({ success: true });
+    } else {
+      return res.redirect(303, '/account');
+    }
 });
 
 //new commernregister page
@@ -306,7 +332,7 @@ app.get('/register', function(req, res){
     res.render('register', { csrf: 'CSRF token goes here' });
 });
 
-function ensureAuthenticatedP(req, res, next) {
+function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
@@ -325,7 +351,7 @@ function validatePassword(passwd){
 
 function addNewUser(authId, password, displayName, role, doneCB){
   var user = new User({
-    authId: "deepinsight" + authId,
+    authId: "deepinsight:" + authId,
     name: displayName,
     password: password,
     created: Date.now(),
@@ -371,11 +397,10 @@ app.post('/register', function(req, res){
 
 });
 
-app.get('/newsletter', function(req, res){
-    // we will learn about CSRF later...for now, we just 
-    // provide a dummy value
+app.get('/newsletter', ensureAuthenticated, function(req, res){
     res.render('newsletter', { csrf: 'CSRF token goes here' });
 });
+
 app.post('/process', function(req, res){
     if(req.xhr || req.accepts('json,html')==='json'){
         // if there were an error, we would send { error: 'error description' }
@@ -705,19 +730,6 @@ function refreshDealerCacheForever(){
 if(!fs.existsSync(dealerCache.jsonFile)) fs.writeFileSync(JSON.stringify([]));
 // start refreshing cache
 //refreshDealerCacheForever();
-
-//Authentication
-var auth = require('./lib/auth.js')(app, {
-        baseUrl: process.env.BASE_URL,
-        providers: credentials.authProviders,
-        successRedirect: '/account',
-        failureRedirect: '/unauthorized',
-});
-// auth.init() links in Passport middleware:
-auth.init();
-
-// now we can specify our auth routes:
-auth.registerRoutes();
 
 // authorization helpers
 function customerOnly(req, res, next){
