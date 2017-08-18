@@ -357,22 +357,20 @@ function addNewUser(authId, password, displayName, role, doneCB){
     cb: doneCB
   }
   crypto.randomBytes(16, function (err, salt) {
-    var tmp = newUser;
     if (err) throw err;
-    argon.hash(tmp.password, salt).then(hash => {
-      var tmp2 = tmp;
+    argon.hash(newUser.password, salt).then(hash => {
       var user = new User({
-        authId: "deepinsight:" + tmp.authId,
-        name: tmp.displayName,
+        authId: "deepinsight:" + newUser.authId,
+        name: newUser.name,
         password: hash,
         created: Date.now(),
-        role: tmp.role,
+        role: newUser.role,
       });
       user.save(function(err){
         if(err) {
-          return tmp2.cb(err, null);
+          return newUser.cb(err, null);
         }
-        tmp2.cb(null, user);
+        newUser.cb(null, user);
       });
 
     });
