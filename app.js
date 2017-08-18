@@ -1,6 +1,7 @@
 var http = require('http');
 var https = require('https');
 var express = require('express');
+var session = require('express-session');
 var fortune = require('./lib/fortune.js');
 var formidable = require('formidable');
 var credentials = require('./credentials.js');
@@ -110,9 +111,6 @@ switch(app.get('env')){
 // CORS for API support
 app.use('/api', require('cors')());
 
-//mongodb based session store
-var MongoSessionStore = require('mongoose-session')(mongoose);
-
 // initialize vacations
 Vacation.find(function(err, vacations){
     if(vacations.length) {
@@ -215,12 +213,16 @@ app.use(express.static(__dirname + '/public'));
 app.use(require('body-parser').urlencoded({ extended: true }));
 //cookie signing middleware
 app.use(require('cookie-parser')(credentials.cookieSecret));
-//session setting
-app.use(require('express-session')({
+//mongodb based session store
+const MongoSessionStore = require('connect-mongo')(session);
+
+app.use(session({
   resave: false,
   saveUninitialized: false,
   secret: credentials.cookieSecret,
-  store: MongoSessionStore
+  store: new MongoSessionStore({
+    mongooseConnection: mongoose.connection
+  })
 }));
 //CSRF shoud put after body-parser, cookie-parser, express-session
 app.use(require('csurf')());
