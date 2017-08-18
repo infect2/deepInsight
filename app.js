@@ -87,6 +87,7 @@ app.use(function(req, res, next){
 app.set('port', process.env.PORT || 3000);
 
 var opts = {
+  useMongoClient: true,
   server: {
     socketOptions: {keepAlive: 1}
   }
