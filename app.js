@@ -16,6 +16,11 @@ var Dealer = require('./models/dealer.js');
 var User = require('./models/user.js');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
+var crypto = require('crypto');
+var argon = require('argon2');
+
+var MIN_PASSWORD_LENGTH = 4;
+var MAX_PASSWORD_LENGTH = 20;
 
 var app = express();
 
@@ -338,26 +343,40 @@ function validateID(userId){
   console.log("Fix Me: validateID");
   return true;
 }
-
 function validatePassword(passwd){
   console.log("Fix Me: validatePassword");
   return true;
 }
 
 function addNewUser(authId, password, displayName, role, doneCB){
-  var user = new User({
-    authId: "deepinsight:" + authId,
-    name: displayName,
+  var newUser = {
+    authId : authId,
     password: password,
-    created: Date.now(),
+    name: displayName,
     role: role,
+    cb: doneCB
+  }
+  crypto.randomBytes(16, function (err, salt) {
+    var tmp = newUser;
+    if (err) throw err;
+    argon.hash(tmp.password, salt).then(hash => {
+      var tmp2 = tmp;
+      var user = new User({
+        authId: "deepinsight:" + tmp.authId,
+        name: tmp.displayName,
+        password: hash,
+        created: Date.now(),
+        role: tmp.role,
+      });
+      user.save(function(err){
+        if(err) {
+          return tmp2.cb(err, null);
+        }
+        tmp2.cb(null, user);
+      });
+
+    });
   });
-  user.save(function(err){
-    if(err) {
-      return doneCB(err, null);
-    }
-    doneCB(null, user);
-  });  
 }
 //add a new user to user DB
 app.post('/register', function(req, res){
@@ -381,14 +400,19 @@ app.post('/register', function(req, res){
     console.log(response);
   }
 
-  //ready to add a user to MongoDB
-  addNewUser(userId, password1, 'Nickname', 'customer', function(err, user){
-    if(req.xhr) {
-      return res.json({ success: (err)? false : true });
-    } else {
-      return res.redirect(303, '/account');
-    }
-  });
+  try {
+    //ready to add a user to MongoDB
+    addNewUser(userId, password1, 'NCSOFT', 'customer', function(err, user){
+      if(req.xhr) {
+        return res.json({ success: (err)? false : true });
+      } else {
+        return res.redirect(303, '/account');
+      }
+    });
+  } catch (error) {
+    console.log("User Registeration Error", error.stack);
+    res.redirect(303, '/register');
+  }
 
 });
 
