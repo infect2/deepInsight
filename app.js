@@ -96,10 +96,12 @@ var opts = {
 //logger setting
 switch(app.get('env')){
   case 'development':
+    console.log("development mode");
     app.use(require('morgan')('dev'));
     mongoose.connect(credentials.mongo.development.connectionString, opts);
     break;
   case 'production':
+    console.log("production mode");
     mongoose.connect(credentials.mongo.development.connectionString, opts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
