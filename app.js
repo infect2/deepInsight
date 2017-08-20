@@ -10,6 +10,7 @@ var compression = require('compression');
 var fs = require('fs');
 var email = require('./lib/email.js');
 var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 var emailService = email(credentials);
 var Vacation = require('./models/vacation.js');
 var VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
@@ -344,10 +345,16 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('login');
 }
 //check if user typed id is valid by uniquness and naming policy
-function validateID(userId){
+// function validateID(userId){
+//   console.log("Fix Me: validateID");
+//   return true;
+// }
+
+let validateID = (userId) => {
   console.log("Fix Me: validateID");
   return true;
 }
+
 function validatePassword(passwd){
   console.log("Fix Me: validatePassword");
   return true;
