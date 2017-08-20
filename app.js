@@ -353,14 +353,15 @@ function validatePassword(passwd){
   return true;
 }
 
-function addNewUser(authId, password, displayName, role, doneCB){
+function addNewUser(authId, password, name, role, cb){
   var newUser = {
-    authId : authId,
-    password: password,
-    name: displayName,
-    role: role,
-    cb: doneCB
+    authId,
+    password,
+    name,
+    role,
+    cb
   }
+
   crypto.randomBytes(16, function (err, salt) {
     if (err) throw err;
     argon.hash(newUser.password, salt).then(hash => {
