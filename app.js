@@ -20,6 +20,8 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var crypto = require('crypto');
 var argon = require('argon2');
+var expressVue = require('express-vue');
+var path = require('path');
 
 var MIN_PASSWORD_LENGTH = 4;
 var MAX_PASSWORD_LENGTH = 20;
@@ -37,7 +39,21 @@ var handlebars = require('express-handlebars').create({
     }
   }
 });
+
 app.engine('handlebars', handlebars.engine);
+
+const vueOptions = {
+    rootPath: path.join(__dirname, './views'),
+    layout: {
+        start: '<div id="app">',
+        end: '</div>'
+    }
+};
+
+const expressVueMiddleware = expressVue.init(vueOptions);
+
+app.use(expressVueMiddleware);
+
 app.set('view engine','handlebars');
 
 // use domains for better error handling
@@ -271,6 +287,22 @@ app.get('/',  (req, res) => {
   res.cookie('sangseoklim', "handsome", { signed: true });
   res.render('home');
 });
+
+app.get('/vue-template', (req, res, next) => {
+    let data = {
+        otherData: 'Something Else' 
+    };
+    let vueOptions = {
+        head: {
+            title: 'Page Title',
+            meta: [ 
+                { property:'og:title', content: 'Page Title'},
+                { name:'twitter:title', content: 'Page Title'},
+            ]
+        }    
+    }
+    res.renderVue('main', data, vueOptions);
+})
 
 app.get('/about',  (req, res) => {
   res.clearCookie('sangseoklim');
