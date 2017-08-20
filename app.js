@@ -554,8 +554,9 @@ app.get('/vacations', (req, res) => {
 });
 
 app.get('/notify-me-when-in-season', (req, res) => {
-    res.render('notify-me-when-in-season', { sku: req.query.sku });
+    res.render('notify-me-when-in-season', { csrf: 'CSRF token goes here' });
 });
+
 
 app.post('/notify-me-when-in-season', (req, res) => {
     VacationInSeasonListener.update(
@@ -582,12 +583,12 @@ app.post('/notify-me-when-in-season', (req, res) => {
         );
 });
 
-app.get('/fail', function(req, res){
+app.get('/fail', (req, res) => {
   throw new Error("Intended!");
 });
 
-app.get('/epic-fail', function(req, res){
-  process.nextTick(function(){
+app.get('/epic-fail', (req, res) => {
+  process.nextTick( () => {
     throw new Error("Disatster!");    
   });
 });
@@ -595,10 +596,10 @@ app.get('/epic-fail', function(req, res){
 //REST API
 var Attraction = require('./models/attraction.js');
 
-app.get('/api/attractions', function(req, res){
-    Attraction.find({ approved: true }, function(err, attractions){
+app.get('/api/attractions', (req, res) => {
+    Attraction.find({ approved: true }, (err, attractions) => {
         if(err) return res.status(500).send('Error Occurred: DB');
-        res.json(attractions.map(function(a){
+        res.json(attractions.map( (a) => {
             return {
                 name: a.name,
                 id: a._id,
@@ -610,7 +611,7 @@ app.get('/api/attractions', function(req, res){
 });
 
 // initialize dealers
-Dealer.find({}, function(err, dealers){
+Dealer.find({}, (err, dealers) => {
     if(dealers.length) return;
 
         new Dealer({
@@ -670,7 +671,7 @@ Dealer.find({}, function(err, dealers){
 });
 
 // dealer geocoding
-function geocodeDealer(dealer){
+let geocodeDealer = (dealer) => {
     var addr = dealer.getAddress(' ');
     if(addr===dealer.geocodedAddress) return;   // already geocoded
 
@@ -687,7 +688,7 @@ function geocodeDealer(dealer){
     }
 
         var geocode = require('./lib/geocode.js');
-    geocode(addr, function(err, coords){
+    geocode(addr, (err, coords) => {
         if(err) return console.log('Geocoding failure for ' + addr);
         dealer.lat = coords.lat;
         dealer.lng = coords.lng;
@@ -696,12 +697,12 @@ function geocodeDealer(dealer){
 }
 
 // optimize performance of dealer display
-function dealersToGoogleMaps(dealers){
+let dealersToGoogleMaps = (dealers) => {
     var js = 'function addMarkers(map){\n' +
         'var markers = [];\n' +
         'var Marker = google.maps.Marker;\n' +
         'var LatLng = google.maps.LatLng;\n';
-    dealers.forEach(function(d){
+    dealers.forEach( (d) => {
         var name = d.name.replace(/'/, '\\\'')
             .replace(/\\/, '\\\\');
         js += 'markers.push(new Marker({\n' +
@@ -727,11 +728,11 @@ var dealerCache = {
 
 dealerCache.jsonFile = __dirname + '/public' + dealerCache.jsonUrl;
 
-dealerCache.refresh = function(cb){
+dealerCache.refresh = (cb) => {
 
     if(Date.now() > dealerCache.lastRefreshed + dealerCache.refreshInterval){
         // we need to refresh the cache
-        Dealer.find({ active: true }, function(err, dealers){
+        Dealer.find({ active: true }, (err, dealers) => {
             if(err) return console.log('Error fetching dealers: '+
                  err);
 
@@ -749,8 +750,8 @@ dealerCache.refresh = function(cb){
     }
 
 };
-function refreshDealerCacheForever(){
-    dealerCache.refresh(function(){
+let refreshDealerCacheForever = () => {
+    dealerCache.refresh( () => {
         // call self after refresh interval
         setTimeout(refreshDealerCacheForever,
             dealerCache.refreshInterval);
@@ -762,60 +763,59 @@ if(!fs.existsSync(dealerCache.jsonFile)) fs.writeFileSync(JSON.stringify([]));
 //refreshDealerCacheForever();
 
 // authorization helpers
-function customerOnly(req, res, next){
+let customerOnly = (req, res, next) => {
         if(req.user && req.user.role==='customer') return next();
         // we want customer-only pages to know they need to logon
         res.redirect(303, '/unauthorized');
 }
-function employeeOnly(req, res, next){
+let employeeOnly = (req, res, next) => {
         if(req.user && req.user.role==='employee') return next();
         // we want employee-only authorization failures to be "hidden", to
         // prevent potential hackers from even knowhing that such a page exists
         next('route');
 }
-function allow(roles) {
-        return function(req, res, next) {
+let allow = (roles) => {
+        return (req, res, next) => {
                 if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
                 res.redirect(303, '/unauthorized');
         };
 }
 
-app.get('/account', function(req, res){
+app.get('/account', (req, res) => {
   if(!req.user)
     return res.redirect(303, '/unauthorized');
   res.render('account', {username: req.user.name});
 });
 
-app.get('/unauthorized', function(req, res) {
+app.get('/unauthorized', (req, res) => {
         res.status(403).render('unauthorized');
 });
 
 // customer routes
-
-app.get('/account', allow('customer,employee'), function(req, res){
+app.get('/account', allow('customer,employee'), (req, res) => {
         res.render('account', { username: req.user.name });
 });
-app.get('/account/order-history', customerOnly, function(req, res){
+app.get('/account/order-history', customerOnly, (req, res) => {
         res.render('account/order-history');
 });
-app.get('/account/email-prefs', customerOnly, function(req, res){
+app.get('/account/email-prefs', customerOnly, (req, res) => {
         res.render('account/email-prefs');
 });
 
 // employer routes
-app.get('/sales', employeeOnly, function(req, res){
+app.get('/sales', employeeOnly, (req, res) => {
         res.render('sales');
 });
 
 // 404 not found
-app.use(function(req, res){
+app.use((req, res) => {
   res.status(404);
   res.render('404');
   emailService.send('infect2@hanmail.net', 'Service Alert', '404 Not Found');
 });
 
 // 500 internal server error
-app.use(function(err, req,res, next){
+app.use((err, req,res, next) => {
   console.error(err.stack);
   res.status(500);
   res.render('500');
@@ -828,8 +828,8 @@ var options = {
   cert: fs.readFileSync(__dirname + '/keys/deepinsight.crt')
 };
 
-function startServer() {
-    server = https.createServer(options, app).listen(app.get('port'), function(){
+let startServer = () => {
+    server = https.createServer(options, app).listen(app.get('port'), () => {
       console.log( 'Express started in ' + app.get('env') +
         ' mode on http://localhost:' + app.get('port') +
         '; press Ctrl-C to terminate.' );
