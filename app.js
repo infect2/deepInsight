@@ -41,15 +41,15 @@ app.engine('handlebars', handlebars.engine);
 app.set('view engine','handlebars');
 
 // use domains for better error handling
-app.use(function(req, res, next){
+app.use((req, res, next) => {
     // create a domain for this request
     var domain = require('domain').create();
     // handle errors on this domain
-    domain.on('error', function(err){
+    domain.on('error', (err) => {
         console.error('DOMAIN ERROR CAUGHT\n', err.stack);
         try {
             // failsafe shutdown in 5 seconds
-            setTimeout(function(){
+            setTimeout(() => {
                 console.error('Failsafe shutdown.');
                 process.exit(1);
             }, 5000);
@@ -87,7 +87,7 @@ app.use(function(req, res, next){
 
 app.set('port', process.env.PORT || 3000);
 
-var opts = {
+let opts = {
   useMongoClient: true,
   server: {
     socketOptions: {keepAlive: 1}
@@ -116,7 +116,7 @@ switch(app.get('env')){
 app.use('/api', require('cors')());
 
 // initialize vacations
-Vacation.find(function(err, vacations){
+Vacation.find( (err, vacations) => {
     if(vacations.length) {
       return;
     }
@@ -168,13 +168,13 @@ Vacation.find(function(err, vacations){
 });
 
 //test page support. it should be placed in front of other routers
-app.use(function(req, res, next){
+app.use( (req, res, next) => {
   res.locals.showTests = app.get('env') !== 'production' && req.query.test === '1';
   next();
 });
 
 // mocked weather data for partials, or Handlebars Widget
-function getWeatherData(){
+let getWeatherData = () => {
     return {
         locations: [
             {
@@ -203,7 +203,7 @@ function getWeatherData(){
 }
 
 // middleware to add weather data to context
-app.use(function(req, res, next){
+app.use( (req, res, next) => {
   if(!res.locals.partials) {
     res.locals.partials = {};
   }
@@ -230,7 +230,7 @@ app.use(session({
 }));
 //CSRF shoud put after body-parser, cookie-parser, express-session
 app.use(require('csurf')());
-app.use(function(req, res, next){
+app.use( (req, res, next) => {
   res.locals._csrfToken = req.csrfToken();
   next();
 });
@@ -238,7 +238,7 @@ app.use(function(req, res, next){
 app.use(compression());
 
 // flash message middleware
-app.use(function(req, res, next){
+app.use( (req, res, next) => {
         // if there's a flash message, transfer
         // it to the context, then clear it
         res.locals.flash = req.session.flash;
@@ -246,8 +246,8 @@ app.use(function(req, res, next){
         next();
 });
 
-app.use(function(req, res, next){
-  var cluster = require('cluster');
+app.use( (req, res, next) => {
+  let cluster = require('cluster');
   if(cluster.isWorker) {
     console.log('Worker %d processing request for %s', cluster.worker.id, req.url);
   }
@@ -255,7 +255,7 @@ app.use(function(req, res, next){
 });
 
 //Authentication
-var auth = require('./lib/auth.js')(app, {
+let auth = require('./lib/auth.js')(app, {
         baseUrl: process.env.BASE_URL,
         providers: credentials.authProviders,
         successRedirect: '/account',
@@ -267,12 +267,12 @@ auth.init();
 // now we can specify our auth routes:
 auth.registerRoutes();
 
-app.get('/', function(req, res){
+app.get('/',  (req, res) => {
   res.cookie('sangseoklim', "handsome", { signed: true });
   res.render('home');
 });
 
-app.get('/about', function(req, res){
+app.get('/about',  (req, res) => {
   res.clearCookie('sangseoklim');
   res.render('about', {
     fortune: fortune.getFortune(),
@@ -280,23 +280,23 @@ app.get('/about', function(req, res){
   });
 });
 
-app.get('/tours/hood-river', function(req, res){
+app.get('/tours/hood-river', (req, res) => {
   res.render('tours/hood-river');
 });
 
-app.get('/tours/oregon-coast', function(req, res){
+app.get('/tours/oregon-coast', (req, res) => {
   res.render('tours/oregon-coast');
 });
 
-app.get('/tours/request-group-rate', function(req, res){
+app.get('/tours/request-group-rate', (req, res) => {
   res.render('tours/request-group-rate');
 });
 
-app.get('/nursery-rhyme', function(req, res){
+app.get('/nursery-rhyme', (req, res) => {
         res.render('nursery-rhyme');
 });
 
-app.get('/data/nursery-rhyme', function(req, res){
+app.get('/data/nursery-rhyme', (req, res) => {
         res.json({
                 animal: 'squirrel',
                 bodyPart: 'tail',
@@ -305,12 +305,12 @@ app.get('/data/nursery-rhyme', function(req, res){
         });
 });
 
-app.get('/thank-you', function(req, res){
+app.get('/thank-you', (req, res) => {
         res.render('thank-you');
 });
 
 //login page display
-app.get('/login', function(req, res){
+app.get('/login', (req, res) => {
     res.render('login', { csrf: 'CSRF token goes here' });
 });
 
@@ -318,7 +318,7 @@ app.get('/login', function(req, res){
 //ajax based login will not work with redirect
 app.post('/login',
   passport.authenticate('local', {failureRedirect: '/login'}),
-  function(req, res){
+  (req, res) => {
     if(req.xhr) {
       return res.json({ success: true });
     } else {
@@ -327,18 +327,18 @@ app.post('/login',
 });
 
 //logout
-app.get('/logout', function(req, res){
+app.get('/logout', (req, res) => {
   req.logout();
   req.session.destroy();
   res.redirect("/login");
 });
 
 //new commer register page
-app.get('/register', function(req, res){
+app.get('/register', (req, res) => {
     res.render('register', { csrf: 'CSRF token goes here' });
 });
 
-function ensureAuthenticated(req, res, next) {
+let ensureAuthenticated = (req, res, next) => {
   if (req.isAuthenticated()) {
     return next();
   }
@@ -355,12 +355,12 @@ let validateID = (userId) => {
   return true;
 }
 
-function validatePassword(passwd){
+let validatePassword = (passwd) => {
   console.log("Fix Me: validatePassword");
   return true;
 }
 
-function addNewUser(authId, password, name, role, cb){
+let  addNewUser = (authId, password, name, role, cb) => {
   var newUser = {
     authId,
     password,
@@ -379,7 +379,7 @@ function addNewUser(authId, password, name, role, cb){
         created: Date.now(),
         role: newUser.role,
       });
-      user.save(function(err){
+      user.save( (err) => {
         if(err) {
           return newUser.cb(err, null);
         }
@@ -390,9 +390,9 @@ function addNewUser(authId, password, name, role, cb){
   });
 }
 //add a new user to user DB
-app.post('/register', function(req, res){
-  var response;
-  var userId = req.body.userId || '',
+app.post('/register', (req, res) => {
+  let response;
+  let userId = req.body.userId || '',
       password1 = req.body.password1 || '',
       password2 = req.body.password2 || '';
   console.log('ID: %s, Password %s : %s', userId, password1, password2);
@@ -413,7 +413,7 @@ app.post('/register', function(req, res){
 
   try {
     //ready to add a user to MongoDB
-    addNewUser(userId, password1, 'NCSOFT', 'customer', function(err, user){
+    addNewUser(userId, password1, 'NCSOFT', 'customer', (err, user) => {
       if(req.xhr) {
         return res.json({ success: (err)? false : true });
       } else {
@@ -427,11 +427,11 @@ app.post('/register', function(req, res){
 
 });
 
-app.get('/newsletter', ensureAuthenticated, function(req, res){
+app.get('/newsletter', ensureAuthenticated, (req, res) => {
     res.render('newsletter', { csrf: 'CSRF token goes here' });
 });
 
-app.post('/process', function(req, res){
+app.post('/process', (req, res) => {
     if(req.xhr || req.accepts('json,html')==='json'){
         // if there were an error, we would send { error: 'error description' }
         res.send({ success: true });
@@ -445,13 +445,13 @@ app.post('/process', function(req, res){
 function NewsletterSignup(){
 }
 
-NewsletterSignup.prototype.save = function(cb){
+NewsletterSignup.prototype.save = (cb) => {
   cb();
 };
 
 var VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
-app.post('/newsletter', function(req, res){
+app.post('/newsletter', (req, res) => {
         var name = req.body.name || '', email = req.body.email || '';
         // input validation
         if(!email.match(VALID_EMAIL_REGEX)) {
@@ -483,8 +483,8 @@ app.post('/newsletter', function(req, res){
         });
 });
 
-app.get('/contest/vacation-photo', function(req, res){
-    var now = new Date(); 
+app.get('/contest/vacation-photo', (req, res) => {
+    let now = new Date(); 
     res.render('contest/vacation-photo', { year: now.getFullYear(), month: now.getMonth() });
 });
 
@@ -494,13 +494,13 @@ var vacationPhotoDir = dataDir + '/vacation-photo';
 if(!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 if(!fs.existsSync(vacationPhotoDir)) fs.mkdirSync(vacationPhotoDir);
 
-function saveContestEntry(contestName, email, year, month, photoPath){
+let saveContestEntry = (contestName, email, year, month, photoPath) => {
     // TODO...this will come later
 }
 
 app.post('/contest/vacation-photo/:year/:month', function(req, res){
-    var form = new formidable.IncomingForm();
-    form.parse(req, function(err, fields, files){ 
+    let form = new formidable.IncomingForm();
+    form.parse(req, (err, fields, files) => { 
         if(err) return res.redirect(303, '/error');
         console.log('received fields:');
         console.log(fields);
@@ -510,16 +510,16 @@ app.post('/contest/vacation-photo/:year/:month', function(req, res){
     });
 });
 
-app.get('/contest/vacation-photo/entries', function(req, res){
+app.get('/contest/vacation-photo/entries', (req, res) => {
         res.render('contest/vacation-photo/entries');
 });
 
-app.get('/set-currency/:currency', function(req,res){
+app.get('/set-currency/:currency', (req,res) => {
     req.session.currency = req.params.currency;
     return res.redirect(303, '/vacations');
 });
 
-function convertFromUSD(value, currency){
+let convertFromUSD = (value, currency) => {
     switch(currency){
         case 'USD': return value * 1;
         case 'GBP': return value * 0.6;
@@ -528,12 +528,12 @@ function convertFromUSD(value, currency){
     }
 }
 
-app.get('/vacations', function(req, res){
-    Vacation.find({ available: true }, function(err, vacations){
+app.get('/vacations', (req, res) => {
+    Vacation.find({ available: true }, (err, vacations) => {
         var currency = req.session.currency || 'USD';
         var context = {
             currency: currency,
-            vacations: vacations.map(function(vacation){
+            vacations: vacations.map( (vacation) => {
                 return {
                     sku: vacation.sku,
                     name: vacation.name,
@@ -553,16 +553,16 @@ app.get('/vacations', function(req, res){
     });
 });
 
-app.get('/notify-me-when-in-season', function(req, res){
+app.get('/notify-me-when-in-season', (req, res) => {
     res.render('notify-me-when-in-season', { sku: req.query.sku });
 });
 
-app.post('/notify-me-when-in-season', function(req, res){
+app.post('/notify-me-when-in-season', (req, res) => {
     VacationInSeasonListener.update(
         { email: req.body.email },
         { $push: { skus: req.body.sku } },
         { upsert: true },
-            function(err){
+            (err) => {
                 if(err) {
                         console.error(err.stack);
                     req.session.flash = {
