@@ -23,13 +23,13 @@ var argon = require('argon2');
 var expressVue = require('express-vue');
 var path = require('path');
 
-var MIN_PASSWORD_LENGTH = 4;
-var MAX_PASSWORD_LENGTH = 20;
+const MIN_PASSWORD_LENGTH = 4;
+const MAX_PASSWORD_LENGTH = 20;
 
-var app = express();
+let app = express();
 
 //view engine, or handlebars setting
-var handlebars = require('express-handlebars').create({
+let handlebars = require('express-handlebars').create({
   defaultLayout: 'main',
   helpers:{
     section: function(name, options){
@@ -393,7 +393,7 @@ let validatePassword = (passwd) => {
 }
 
 let  addNewUser = (authId, password, name, role, cb) => {
-  var newUser = {
+  let newUser = {
     authId,
     password,
     name,
@@ -404,7 +404,7 @@ let  addNewUser = (authId, password, name, role, cb) => {
   crypto.randomBytes(16, function (err, salt) {
     if (err) throw err;
     argon.hash(newUser.password, salt).then(hash => {
-      var user = new User({
+      let user = new User({
         authId: "deepinsight:" + newUser.authId,
         name: newUser.name,
         password: hash,
@@ -481,10 +481,10 @@ NewsletterSignup.prototype.save = (cb) => {
   cb();
 };
 
-var VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+const VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 app.post('/newsletter', (req, res) => {
-        var name = req.body.name || '', email = req.body.email || '';
+        let name = req.body.name || '', email = req.body.email || '';
         // input validation
         if(!email.match(VALID_EMAIL_REGEX)) {
                 if(req.xhr) return res.json({ error: 'Invalid name email address.' });
@@ -521,8 +521,8 @@ app.get('/contest/vacation-photo', (req, res) => {
 });
 
 // make sure data directory exists
-var dataDir = __dirname + '/data';
-var vacationPhotoDir = dataDir + '/vacation-photo';
+let dataDir = __dirname + '/data';
+let vacationPhotoDir = dataDir + '/vacation-photo';
 if(!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 if(!fs.existsSync(vacationPhotoDir)) fs.mkdirSync(vacationPhotoDir);
 
@@ -562,8 +562,8 @@ let convertFromUSD = (value, currency) => {
 
 app.get('/vacations', (req, res) => {
     Vacation.find({ available: true }, (err, vacations) => {
-        var currency = req.session.currency || 'USD';
-        var context = {
+        let currency = req.session.currency || 'USD';
+        let context = {
             currency: currency,
             vacations: vacations.map( (vacation) => {
                 return {
@@ -626,7 +626,7 @@ app.get('/epic-fail', (req, res) => {
 });
 
 //REST API
-var Attraction = require('./models/attraction.js');
+let Attraction = require('./models/attraction.js');
 
 app.get('/api/attractions', (req, res) => {
     Attraction.find({ approved: true }, (err, attractions) => {
@@ -704,7 +704,7 @@ Dealer.find({}, (err, dealers) => {
 
 // dealer geocoding
 let geocodeDealer = (dealer) => {
-    var addr = dealer.getAddress(' ');
+    let addr = dealer.getAddress(' ');
     if(addr===dealer.geocodedAddress) return;   // already geocoded
 
     if(dealerCache.geocodeCount >= dealerCache.geocodeLimit){
@@ -719,23 +719,23 @@ let geocodeDealer = (dealer) => {
         }
     }
 
-        var geocode = require('./lib/geocode.js');
-    geocode(addr, (err, coords) => {
-        if(err) return console.log('Geocoding failure for ' + addr);
-        dealer.lat = coords.lat;
-        dealer.lng = coords.lng;
-        dealer.save();
-    });
+        let geocode = require('./lib/geocode.js');
+        geocode(addr, (err, coords) => {
+            if(err) return console.log('Geocoding failure for ' + addr);
+            dealer.lat = coords.lat;
+            dealer.lng = coords.lng;
+            dealer.save();
+        });
 }
 
 // optimize performance of dealer display
 let dealersToGoogleMaps = (dealers) => {
-    var js = 'function addMarkers(map){\n' +
+    let js = 'function addMarkers(map){\n' +
         'var markers = [];\n' +
         'var Marker = google.maps.Marker;\n' +
         'var LatLng = google.maps.LatLng;\n';
     dealers.forEach( (d) => {
-        var name = d.name.replace(/'/, '\\\'')
+        let name = d.name.replace(/'/, '\\\'')
             .replace(/\\/, '\\\\');
         js += 'markers.push(new Marker({\n' +
                 '\tposition: new LatLng(' +
@@ -749,7 +749,7 @@ let dealersToGoogleMaps = (dealers) => {
 }
 
 // dealer cache
-var dealerCache = {
+let dealerCache = {
     lastRefreshed: 0,
     refreshInterval: 60 * 60 * 1000,
     jsonUrl: '/dealers.json',
@@ -854,8 +854,8 @@ app.use((err, req,res, next) => {
   emailService.send('infect2@hanmail.net', 'Service Alert', 'Internal Server Error');
 });
 
-var server;
-var options = {
+let server;
+let options = {
   key: fs.readFileSync(__dirname + '/keys/deepinsight.pem'),
   cert: fs.readFileSync(__dirname + '/keys/deepinsight.crt')
 };
