@@ -1,0 +1,7 @@
+deepinsight:
+    image: "sangseoklim/deepinsight:latest"
+    ports:
+     - "49160:3000"
+     - "49161:9229"
+    environment:
+      ENV: DEV
