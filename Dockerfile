@@ -12,7 +12,9 @@ COPY package-lock.json .
 COPY . .
 
 RUN npm install
+RUN npm install -g nodemon
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["./cmd.sh"]
+#CMD ["npm", "start"]
