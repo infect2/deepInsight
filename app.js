@@ -376,11 +376,6 @@ let ensureAuthenticated = (req, res, next) => {
   }
   res.redirect('login');
 }
-//check if user typed id is valid by uniquness and naming policy
-// function validateID(userId){
-//   console.log("Fix Me: validateID");
-//   return true;
-// }
 
 let validateID = (userId) => {
   console.log("Fix Me: validateID");
