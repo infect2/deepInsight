@@ -23,6 +23,8 @@ let argon = require('argon2');
 let expressVue = require('express-vue');
 let path = require('path');
 let logger = require('express-fluent-logger');
+let amqp = require('amqp');
+let rabbit = amqp.createConnection({ host: '172.17.0.6' });
 
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
@@ -35,6 +37,24 @@ let getUserNameFromAuthID = (req) => {
   return nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
 }
 
+let messageExchange;
+
+rabbit.on('ready', () => {
+  console.log('RabbitMQ is ready');
+  rabbit.exchange('my-first-exchange', {type:'direct', autoDelete: false}, (ex) => {
+    console.log('RabbitMQ: message exchange is created');
+    messageExchange = ex;
+  });
+  rabbit.queue('first-queue-name', {autoDelete: false}, (q) => {
+    q.bind('my-first-exchange', 'first-queue');
+    q.subscribe( (message, headers, deliveryInfo, messageObject) => {
+      console.log(message);
+      console.log(headers);
+      console.log(deliveryInfo);
+      console.log(messageObject);
+    });
+  });
+});
 
 const app = express();
 
@@ -65,6 +85,11 @@ const expressVueMiddleware = expressVue.init(vueOptions);
 app.use(expressVueMiddleware);
 
 app.set('view engine','handlebars');
+
+app.use((req,res,next) => {
+  messageExchange.publish('first-queue', {message: req.url});
+  next();
+});
 
 // use domains for better error handling
 app.use((req, res, next) => {

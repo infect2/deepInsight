@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/infect2/deepInsight#readme",
   "dependencies": {
+    "amqp": "^0.2.6",
     "argon2": "^0.16.1",
     "async": "^2.5.0",
     "body-parser": "^1.17.2",
