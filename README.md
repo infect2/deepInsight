@@ -5,7 +5,11 @@ Coming Soon
 ## Docker Build
 docker build -t sangseoklim/deepinsight
 
-## Mongo DB Run for DeepInsight
+## Prequite for Running Deepinsight
+### Mongo DB
+docker-compose -f mongo-compose.yaml up -d
+
+### Fluentd
 docker-compose -f mongo-compose.yaml up -d
 
 ## Docker Run in Devlopment Mode (Single Process with Node Inspect On)
