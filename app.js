@@ -118,7 +118,7 @@ let opts = {
     socketOptions: {keepAlive: 1}
   },
   reconnectTries: 5,
-  reconnectInterval 1000
+  reconnectInterval: 1000
 };
 
 //logger setting
