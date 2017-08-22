@@ -820,7 +820,7 @@ app.get('/unauthorized', (req, res) => {
 
 // customer routes
 app.get('/account', allow('customer,employee'), (req, res) => {
-        res.render('account', { username: req.user.name });
+        res.render('account', { username: req.user.authId.split(':')[1] });
 });
 app.get('/account/order-history', customerOnly, (req, res) => {
         res.render('account/order-history');
