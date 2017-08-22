@@ -1,0 +1,3 @@
+rabbitmq:
+  image: "rabbitmq:3-management"
+  hostname: deepinsight
