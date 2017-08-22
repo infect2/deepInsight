@@ -9,8 +9,8 @@ docker build -t deepinsight
 ### Mongo DB
 docker-compose -f mongo-compose.yaml up -d
 
-### Fluentd
-docker-compose -f fluentd-compose.yaml up -d
+### Fluentd/ElasticSearch/Kibana
+docker-compose -f logging-compose.yaml up -d
 
 ## Running DeepInsight
 ### Docker Run in Devlopment Mode (Single Process with Node Inspect On)
