@@ -808,11 +808,11 @@ let allow = (roles) => {
         };
 }
 
-app.get('/account', (req, res) => {
-  if(!req.user)
-    return res.redirect(303, '/unauthorized');
-  res.render('account', {username: req.user.name});
-});
+// app.get('/account', (req, res) => {
+//   if(!req.user)
+//     return res.redirect(303, '/unauthorized');
+//   res.render('account', {username: req.user.name});
+// });
 
 app.get('/unauthorized', (req, res) => {
         res.status(403).render('unauthorized');
