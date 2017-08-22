@@ -1,33 +1,33 @@
-var http = require('http');
-var https = require('https');
-var express = require('express');
-var session = require('express-session');
-var fortune = require('./lib/fortune.js');
-var formidable = require('formidable');
-var credentials = require('./credentials.js');
-var connect = require('connect');
-var compression = require('compression');
-var fs = require('fs');
-var email = require('./lib/email.js');
-var mongoose = require('mongoose');
+let http = require('http');
+let https = require('https');
+let express = require('express');
+let session = require('express-session');
+let fortune = require('./lib/fortune.js');
+let formidable = require('formidable');
+let credentials = require('./credentials.js');
+let connect = require('connect');
+let compression = require('compression');
+let fs = require('fs');
+let email = require('./lib/email.js');
+let mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
-var emailService = email(credentials);
-var Vacation = require('./models/vacation.js');
-var VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
-var Dealer = require('./models/dealer.js');
-var User = require('./models/user.js');
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
-var crypto = require('crypto');
-var argon = require('argon2');
-var expressVue = require('express-vue');
-var path = require('path');
+let emailService = email(credentials);
+let Vacation = require('./models/vacation.js');
+let VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
+let Dealer = require('./models/dealer.js');
+let User = require('./models/user.js');
+let passport = require('passport');
+let LocalStrategy = require('passport-local').Strategy;
+let crypto = require('crypto');
+let argon = require('argon2');
+let expressVue = require('express-vue');
+let path = require('path');
 
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
 const AUTHID_PREFIX = 'deepinsight:';
 
-let app = express();
+const app = express();
 
 //view engine, or handlebars setting
 let handlebars = require('express-handlebars').create({
@@ -60,7 +60,7 @@ app.set('view engine','handlebars');
 // use domains for better error handling
 app.use((req, res, next) => {
     // create a domain for this request
-    var domain = require('domain').create();
+    let domain = require('domain').create();
     // handle errors on this domain
     domain.on('error', (err) => {
         console.error('DOMAIN ERROR CAUGHT\n', err.stack);
@@ -72,7 +72,7 @@ app.use((req, res, next) => {
             }, 5000);
 
             // disconnect from the cluster
-            var worker = require('cluster').worker;
+            let worker = require('cluster').worker;
             if(worker) worker.disconnect();
 
             // stop taking new requests
@@ -827,9 +827,11 @@ app.get('/account', allow('customer,employee'), (req, res) => {
   let name = nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
   res.render('account', { username: name });
 });
+
 app.get('/account/order-history', customerOnly, (req, res) => {
   res.render('account/order-history');
 });
+
 app.get('/account/email-prefs', customerOnly, (req, res) => {
   res.render('account/email-prefs');
 });
