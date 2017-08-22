@@ -22,6 +22,7 @@ let crypto = require('crypto');
 let argon = require('argon2');
 let expressVue = require('express-vue');
 let path = require('path');
+let logger = require('express-fluent-logger');
 
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
@@ -126,6 +127,12 @@ switch(app.get('env')){
   case 'development':
     console.log("development mode");
     app.use(require('morgan')('dev'));
+    app.use(logger('deepinsight',{
+      host:'127.0.0.1',
+      port: 24224,
+      timeout: 3.0,
+      responseHeaders: ['x-userid']
+    }));
     mongoose.connect(credentials.mongo.development.connectionString, opts);
     break;
   case 'production':
@@ -133,6 +140,12 @@ switch(app.get('env')){
     mongoose.connect(credentials.mongo.development.connectionString, opts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
+    }));
+    app.use(logger('deepinsight',{
+      host:'127.0.0.1',
+      port: 24224,
+      timeout: 3.0,
+      responseHeaders: ['x-userid']
     }));
     break;
   default:
