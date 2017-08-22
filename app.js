@@ -27,6 +27,14 @@ const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
 const AUTHID_PREFIX = 'deepinsight:';
 
+// 'deepinsight:' is a prefix for our user ID storage rule
+// Thus remove it from authId before sending it to user
+let getUserNameFromAuthID = (req) => {
+  let nameWithPrefix = req.user.authId;
+  return nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
+}
+
+
 const app = express();
 
 //view engine, or handlebars setting
@@ -339,12 +347,18 @@ app.get('/data/nursery-rhyme', (req, res) => {
 });
 
 app.get('/thank-you', (req, res) => {
-        res.render('thank-you');
+  res.render('thank-you');
 });
 
 //login page display
 app.get('/login', (req, res) => {
-    res.render('login', { csrf: 'CSRF token goes here' });
+  if(!!req.user) {
+    //user is already in logined
+    //logout first
+    res.render('logout', { username: getUserNameFromAuthID(req) });
+    return;
+  }
+  res.render('login', { csrf: 'CSRF token goes here' });
 });
 
 //FIX ME
@@ -821,11 +835,7 @@ app.get('/unauthorized', (req, res) => {
 
 // customer routes
 app.get('/account', allow('customer,employee'), (req, res) => {
-  // 'deepinsight:' is a prefix for our user ID storage rule
-  // Thus remove it from authId before sending it to user
-  let nameWithPrefix = req.user.authId;
-  let name = nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
-  res.render('account', { username: name });
+  res.render('account', { username: getUserNameFromAuthID(req) });
 });
 
 app.get('/account/order-history', customerOnly, (req, res) => {
