@@ -1,7 +1,3 @@
-mongo:
-  image: "mongo:latest"
-  volumes:
-    - /data/mongo:/data/db
 deepinsight:
   # build: .
   image: "sangseoklim/deepinsight:latest"

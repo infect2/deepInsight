@@ -1,0 +1,4 @@
+mongo:
+  image: "mongo:latest"
+  volumes:
+    - /data/mongo:/data/db
