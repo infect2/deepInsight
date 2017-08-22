@@ -6,3 +6,8 @@ deepinsight:
    - "49161:9229"
   environment:
     ENV: DEV
+  # logging:
+  #   driver: "fluentd"
+  #   options:
+  #     fluentd-address: localhost:24224
+  #     tag: httpd.access
