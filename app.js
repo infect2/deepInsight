@@ -25,6 +25,7 @@ var path = require('path');
 
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
+const AUTHID_PREFIX = 'deepinsight:';
 
 let app = express();
 
@@ -820,13 +821,17 @@ app.get('/unauthorized', (req, res) => {
 
 // customer routes
 app.get('/account', allow('customer,employee'), (req, res) => {
-        res.render('account', { username: req.user.authId.split(':')[1] });
+  // 'deepinsight:' is a prefix for our user ID storage rule
+  // Thus remove it from authId before sending it to user
+  let nameWithPrefix = req.user.authId;
+  let name = nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
+  res.render('account', { username: name });
 });
 app.get('/account/order-history', customerOnly, (req, res) => {
-        res.render('account/order-history');
+  res.render('account/order-history');
 });
 app.get('/account/email-prefs', customerOnly, (req, res) => {
-        res.render('account/email-prefs');
+  res.render('account/email-prefs');
 });
 
 // employer routes
