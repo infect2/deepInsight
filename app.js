@@ -116,7 +116,9 @@ let opts = {
   useMongoClient: true,
   server: {
     socketOptions: {keepAlive: 1}
-  }
+  },
+  reconnectTries: 5,
+  reconnectInterval 1000
 };
 
 //logger setting
