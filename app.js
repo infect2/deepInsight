@@ -37,6 +37,7 @@ let getUserNameFromAuthID = (req) => {
   return nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
 }
 
+//RabbitMQ integration
 let messageExchange;
 
 rabbit.on('ready', () => {
@@ -148,16 +149,17 @@ let opts = {
 };
 
 //logger setting
+app.use(logger('deepinsight',{
+  host:'172.17.0.5',
+  port: 24224,
+  timeout: 3.0,
+  responseHeaders: ['x-userid']
+}));
+
 switch(app.get('env')){
   case 'development':
     console.log("development mode");
     app.use(require('morgan')('dev'));
-    app.use(logger('deepinsight',{
-      host:'127.0.0.1',
-      port: 24224,
-      timeout: 3.0,
-      responseHeaders: ['x-userid']
-    }));
     mongoose.connect(credentials.mongo.development.connectionString, opts);
     break;
   case 'production':
@@ -165,12 +167,6 @@ switch(app.get('env')){
     mongoose.connect(credentials.mongo.development.connectionString, opts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
-    }));
-    app.use(logger('deepinsight',{
-      host:'127.0.0.1',
-      port: 24224,
-      timeout: 3.0,
-      responseHeaders: ['x-userid']
     }));
     break;
   default:
