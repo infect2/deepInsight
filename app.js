@@ -357,31 +357,6 @@ app.get('/about',  (req, res) => {
   });
 });
 
-app.get('/tours/hood-river', (req, res) => {
-  res.render('tours/hood-river');
-});
-
-app.get('/tours/oregon-coast', (req, res) => {
-  res.render('tours/oregon-coast');
-});
-
-app.get('/tours/request-group-rate', (req, res) => {
-  res.render('tours/request-group-rate');
-});
-
-app.get('/nursery-rhyme', (req, res) => {
-        res.render('nursery-rhyme');
-});
-
-app.get('/data/nursery-rhyme', (req, res) => {
-        res.json({
-                animal: 'squirrel',
-                bodyPart: 'tail',
-                adjective: 'bushy',
-                noun: 'heck',
-        });
-});
-
 app.get('/thank-you', (req, res) => {
   res.render('thank-you');
 });
@@ -509,158 +484,6 @@ app.get('/newsletter', ensureAuthenticated, (req, res) => {
     res.render('newsletter', { csrf: 'CSRF token goes here' });
 });
 
-app.post('/process', (req, res) => {
-    if(req.xhr || req.accepts('json,html')==='json'){
-        // if there were an error, we would send { error: 'error description' }
-        res.send({ success: true });
-    } else {
-        // if there were an error, we would redirect to an error page
-        res.redirect(303, '/thank-you');
-    }
-});
-
-// for now, we're mocking NewsletterSignup:
-function NewsletterSignup(){
-}
-
-NewsletterSignup.prototype.save = (cb) => {
-  cb();
-};
-
-const VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-
-app.post('/newsletter', (req, res) => {
-        let name = req.body.name || '', email = req.body.email || '';
-        // input validation
-        if(!email.match(VALID_EMAIL_REGEX)) {
-                if(req.xhr) return res.json({ error: 'Invalid name email address.' });
-                req.session.flash = {
-                        type: 'danger',
-                        intro: 'Validation error!',
-                        message: 'The email address you entered was  not valid.',
-                };
-                return res.redirect(303, '/newsletter/archive');
-        }
-        new NewsletterSignup({ name: name, email: email }).save(function(err){
-                if(err) {
-                        if(req.xhr) return res.json({ error: 'Database error.' });
-                        req.session.flash = {
-                                type: 'danger',
-                                intro: 'Database error!',
-                                message: 'There was a database error; please try again later.',
-                        };
-                        return res.redirect(303, '/newsletter/archive');
-                }
-                if(req.xhr) return res.json({ success: true });
-                req.session.flash = {
-                        type: 'success',
-                        intro: 'Thank you!',
-                        message: 'You have now been signed up for the newsletter.',
-                };
-                return res.redirect(303, '/newsletter/archive');
-        });
-});
-
-app.get('/contest/vacation-photo', (req, res) => {
-    let now = new Date(); 
-    res.render('contest/vacation-photo', { year: now.getFullYear(), month: now.getMonth() });
-});
-
-// make sure data directory exists
-let dataDir = __dirname + '/data';
-let vacationPhotoDir = dataDir + '/vacation-photo';
-if(!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
-if(!fs.existsSync(vacationPhotoDir)) fs.mkdirSync(vacationPhotoDir);
-
-let saveContestEntry = (contestName, email, year, month, photoPath) => {
-    // TODO...this will come later
-}
-
-app.post('/contest/vacation-photo/:year/:month', function(req, res){
-    let form = new formidable.IncomingForm();
-    form.parse(req, (err, fields, files) => { 
-        if(err) return res.redirect(303, '/error');
-        console.log('received fields:');
-        console.log(fields);
-        console.log('received files:');
-        console.log(files);
-        res.redirect(303, '/thank-you');
-    });
-});
-
-app.get('/contest/vacation-photo/entries', (req, res) => {
-        res.render('contest/vacation-photo/entries');
-});
-
-app.get('/set-currency/:currency', (req,res) => {
-    req.session.currency = req.params.currency;
-    return res.redirect(303, '/vacations');
-});
-
-let convertFromUSD = (value, currency) => {
-    switch(currency){
-        case 'USD': return value * 1;
-        case 'GBP': return value * 0.6;
-        case 'BTC': return value * 0.0023707918444761;
-        default: return NaN;
-    }
-}
-
-app.get('/vacations', (req, res) => {
-    Vacation.find({ available: true }, (err, vacations) => {
-        let currency = req.session.currency || 'USD';
-        let context = {
-            currency: currency,
-            vacations: vacations.map( (vacation) => {
-                return {
-                    sku: vacation.sku,
-                    name: vacation.name,
-                    description: vacation.description,
-                    inSeason: vacation.inSeason,
-                    price: convertFromUSD(vacation.priceInCents/100, currency),
-                    qty: vacation.qty,
-                };
-            })
-        };
-        switch(currency){
-                case 'USD': context.currencyUSD = 'selected'; break;
-                case 'GBP': context.currencyGBP = 'selected'; break;
-                case 'BTC': context.currencyBTC = 'selected'; break;
-            }
-        res.render('vacations', context);
-    });
-});
-
-app.get('/notify-me-when-in-season', (req, res) => {
-    res.render('notify-me-when-in-season', { csrf: 'CSRF token goes here' });
-});
-
-
-app.post('/notify-me-when-in-season', (req, res) => {
-    VacationInSeasonListener.update(
-        { email: req.body.email },
-        { $push: { skus: req.body.sku } },
-        { upsert: true },
-            (err) => {
-                if(err) {
-                        console.error(err.stack);
-                    req.session.flash = {
-                        type: 'danger',
-                        intro: 'Ooops!',
-                        message: 'There was an error processing your request.',
-                    };
-                    return res.redirect(303, '/vacations');
-                }
-                req.session.flash = {
-                    type: 'success',
-                    intro: 'Thank you!',
-                    message: 'You will be notified when this vacation is in season.',
-                };
-                return res.redirect(303, '/vacations');
-            }
-        );
-});
-
 app.get('/fail', (req, res) => {
   throw new Error("Intended!");
 });
@@ -672,173 +495,14 @@ app.get('/epic-fail', (req, res) => {
 });
 
 //REST API
-let Attraction = require('./models/attraction.js');
-
-app.get('/api/attractions', (req, res) => {
-    Attraction.find({ approved: true }, (err, attractions) => {
-        if(err) return res.status(500).send('Error Occurred: DB');
-        res.json(attractions.map( (a) => {
-            return {
-                name: a.name,
-                id: a._id,
-                description: a.description,
-                location: a.location,
-            };
-        }));
-    });
+app.get('/api/purpose', (req, res) => {
+  res.json({
+          name: "deepinsight",
+          id: 12345,
+          description: "online survey",
+          location: "South Korea",
+  });
 });
-
-// initialize dealers
-Dealer.find({}, (err, dealers) => {
-    if(dealers.length) return;
-
-        new Dealer({
-                name: 'Oregon Novelties',
-                address1: '912 NW Davis St',
-                city: 'Portland',
-                state: 'OR',
-                zip: '97209',
-                country: 'US',
-                phone: '503-555-1212',
-                active: true,
-        }).save();
-
-        new Dealer({
-                name: 'Bruce\'s Bric-a-Brac',
-                address1: '159 Beeswax Ln',
-                city: 'Manzanita',
-                state: 'OR',
-                zip: '97209',
-                country: 'US',
-                phone: '503-555-1212',
-                active: true,
-        }).save();
-
-        new Dealer({
-                name: 'Aunt Beru\'s Oregon Souveniers',
-                address1: '544 NE Emerson Ave',
-                city: 'Bend',
-                state: 'OR',
-                zip: '97701',
-                country: 'US',
-                phone: '503-555-1212',
-                active: true,
-        }).save();
-
-        new Dealer({
-                name: 'Oregon Goodies',
-                address1: '1353 NW Beca Ave',
-                city: 'Corvallis',
-                state: 'OR',
-                zip: '97330',
-                country: 'US',
-                phone: '503-555-1212',
-                active: true,
-        }).save();
-
-        new Dealer({
-                name: 'Oregon Grab-n-Fly',
-                address1: '7000 NE Airport Way',
-                city: 'Portland',
-                state: 'OR',
-                zip: '97219',
-                country: 'US',
-                phone: '503-555-1212',
-                active: true,
-        }).save();
-});
-
-// dealer geocoding
-let geocodeDealer = (dealer) => {
-    let addr = dealer.getAddress(' ');
-    if(addr===dealer.geocodedAddress) return;   // already geocoded
-
-    if(dealerCache.geocodeCount >= dealerCache.geocodeLimit){
-        // has 24 hours passed since we last started geocoding?
-        if(Date.now() > dealerCache.geocodeCount + 24 * 60 * 60 * 1000){
-            dealerCache.geocodeBegin = Date.now();
-            dealerCache.geocodeCount = 0;
-        } else {
-            // we can't geocode this now: we've
-            // reached our usage limit
-            return;
-        }
-    }
-
-        let geocode = require('./lib/geocode.js');
-        geocode(addr, (err, coords) => {
-            if(err) return console.log('Geocoding failure for ' + addr);
-            dealer.lat = coords.lat;
-            dealer.lng = coords.lng;
-            dealer.save();
-        });
-}
-
-// optimize performance of dealer display
-let dealersToGoogleMaps = (dealers) => {
-    let js = 'function addMarkers(map){\n' +
-        'var markers = [];\n' +
-        'var Marker = google.maps.Marker;\n' +
-        'var LatLng = google.maps.LatLng;\n';
-    dealers.forEach( (d) => {
-        let name = d.name.replace(/'/, '\\\'')
-            .replace(/\\/, '\\\\');
-        js += 'markers.push(new Marker({\n' +
-                '\tposition: new LatLng(' +
-                    d.lat + ', ' + d.lng + '),\n' +
-                '\tmap: map,\n' +
-                '\ttitle: \'' + name.replace(/'/, '\\') + '\',\n' +
-            '}));\n';
-    });
-    js += '}';
-    return js;
-}
-
-// dealer cache
-let dealerCache = {
-    lastRefreshed: 0,
-    refreshInterval: 60 * 60 * 1000,
-    jsonUrl: '/dealers.json',
-    geocodeLimit: 2000,
-    geocodeCount: 0,
-    geocodeBegin: 0,
-};
-
-dealerCache.jsonFile = __dirname + '/public' + dealerCache.jsonUrl;
-
-dealerCache.refresh = (cb) => {
-
-    if(Date.now() > dealerCache.lastRefreshed + dealerCache.refreshInterval){
-        // we need to refresh the cache
-        Dealer.find({ active: true }, (err, dealers) => {
-            if(err) return console.log('Error fetching dealers: '+
-                 err);
-
-            // geocodeDealer will do nothing if coordinates are up-to-date
-            dealers.forEach(geocodeDealer);
-
-            // we now write all the dealers out to our cached JSON file
-            fs.writeFileSync(dealerCache.jsonFile, JSON.stringify(dealers));
-
-                        fs.writeFileSync(__dirname + '/public/js/dealers-googleMapMarkers.js', dealersToGoogleMaps(dealers));
-
-            // all done -- invoke callback
-            cb();
-        });
-    }
-
-};
-let refreshDealerCacheForever = () => {
-    dealerCache.refresh( () => {
-        // call self after refresh interval
-        setTimeout(refreshDealerCacheForever,
-            dealerCache.refreshInterval);
-    });
-}
-// create empty cache if it doesn't exist to prevent 404 errors
-if(!fs.existsSync(dealerCache.jsonFile)) fs.writeFileSync(JSON.stringify([]));
-// start refreshing cache
-//refreshDealerCacheForever();
 
 // authorization helpers
 let customerOnly = (req, res, next) => {
@@ -859,12 +523,6 @@ let allow = (roles) => {
         };
 }
 
-// app.get('/account', (req, res) => {
-//   if(!req.user)
-//     return res.redirect(303, '/unauthorized');
-//   res.render('account', {username: req.user.name});
-// });
-
 app.get('/unauthorized', (req, res) => {
         res.status(403).render('unauthorized');
 });
@@ -872,19 +530,6 @@ app.get('/unauthorized', (req, res) => {
 // customer routes
 app.get('/account', allow('customer,employee'), (req, res) => {
   res.render('account', { username: getUserNameFromAuthID(req) });
-});
-
-app.get('/account/order-history', customerOnly, (req, res) => {
-  res.render('account/order-history');
-});
-
-app.get('/account/email-prefs', customerOnly, (req, res) => {
-  res.render('account/email-prefs');
-});
-
-// employer routes
-app.get('/sales', employeeOnly, (req, res) => {
-        res.render('sales');
 });
 
 // 404 not found
