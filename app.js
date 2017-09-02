@@ -255,9 +255,9 @@ app.use(session({
   })
 }));
 //CSRF shoud put after body-parser, cookie-parser, express-session
-// app.use(require('csurf')());
+app.use(require('csurf')());
 app.use( (req, res, next) => {
-  // res.locals._csrfToken = req.csrfToken();
+  res.locals._csrfToken = req.csrfToken();
   next();
 });
 //gzip compression
