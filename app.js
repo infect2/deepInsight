@@ -1,6 +1,7 @@
 let http = require('http');
 let https = require('https');
 let express = require('express');
+let bodyParser = require('body-parser');
 let session = require('express-session');
 let fortune = require('./lib/fortune.js');
 let formidable = require('formidable');
@@ -12,8 +13,6 @@ let email = require('./lib/email.js');
 let mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 let emailService = email(credentials);
-let Vacation = require('./models/vacation.js');
-// let VacationInSeasonListener = require('./models/vacationInSeasonListenesdr.js');
 let Dealer = require('./models/dealer.js');
 let User = require('./models/user.js');
 let passport = require('passport');
@@ -26,9 +25,14 @@ let logger = require('express-fluent-logger');
 let amqp = require('amqp');
 let rabbit = amqp.createConnection({ host: '172.17.0.8' });
 
+let multer = require('multer');
+let xlstojson = require("xls-to-json-lc");
+let xlsxtojson = require("xlsx-to-json-lc");
+
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
 const AUTHID_PREFIX = 'deepinsight:';
+const EXCEL_UPLOAD_DIRECTORY = './uploads/'
 
 // 'deepinsight:' is a prefix for our user ID storage rule
 // Thus remove it from authId before sending it to user
@@ -36,6 +40,17 @@ let getUserNameFromAuthID = (req) => {
   let nameWithPrefix = req.user.authId;
   return nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
 }
+
+//multers disk storage settings
+let storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, EXCEL_UPLOAD_DIRECTORY)
+    },
+    filename: (req, file, cb) => {
+        let datetimestamp = Date.now();
+        cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1])
+    }
+});
 
 //RabbitMQ integration
 let messageExchange;
@@ -49,10 +64,10 @@ rabbit.on('ready', () => {
   rabbit.queue('first-queue-name', {autoDelete: false}, (q) => {
     q.bind('my-first-exchange', 'first-queue');
     q.subscribe( (message, headers, deliveryInfo, messageObject) => {
-      console.log(message);
-      console.log(headers);
-      console.log(deliveryInfo);
-      console.log(messageObject);
+      // console.log(message);
+      // console.log(headers);
+      // console.log(deliveryInfo);
+      // console.log(messageObject);
     });
   });
 });
@@ -173,60 +188,10 @@ switch(app.get('env')){
     throw new Error('Unknown execution environment: ' + app.get('env'));
 }
 
+app.use(bodyParser.json());
+
 // CORS for API support
 app.use('/api', require('cors')());
-
-// initialize vacations
-Vacation.find( (err, vacations) => {
-    if(vacations.length) {
-      return;
-    }
-
-    new Vacation({
-        name: 'Hood River Day Trip',
-        slug: 'hood-river-day-trip',
-        category: 'Day Trip',
-        sku: 'HR199',
-        description: 'Spend a day sailing on the Columbia and ' +
-            'enjoying craft beers in Hood River!',
-        priceInCents: 9995,
-        tags: ['day trip', 'hood river', 'sailing', 'windsurfing', 'breweries'],
-        inSeason: true,
-        maximumGuests: 16,
-        available: true,
-        packagesSold: 0,
-    }).save();
-
-    new Vacation({
-        name: 'Oregon Coast Getaway',
-        slug: 'oregon-coast-getaway',
-        category: 'Weekend Getaway',
-        sku: 'OC39',
-        description: 'Enjoy the ocean air and quaint coastal towns!',
-        priceInCents: 269995,
-        tags: ['weekend getaway', 'oregon coast', 'beachcombing'],
-        inSeason: false,
-        maximumGuests: 8,
-        available: true,
-        packagesSold: 0,
-    }).save();
-
-    new Vacation({
-        name: 'Rock Climbing in Bend',
-        slug: 'rock-climbing-in-bend',
-        category: 'Adventure',
-        sku: 'B99',
-        description: 'Experience the thrill of rock climbing in the high desert.',
-        priceInCents: 289995,
-        tags: ['weekend getaway', 'bend', 'high desert', 'rock climbing', 'hiking', 'skiing'],
-        inSeason: true,
-        requiresWaiver: true,
-        maximumGuests: 4,
-        available: false,
-        packagesSold: 0,
-        notes: 'The tour guide is currently recovering from a skiing accident.',
-    }).save();
-});
 
 //test page support. it should be placed in front of other routers
 app.use( (req, res, next) => {
@@ -290,9 +255,9 @@ app.use(session({
   })
 }));
 //CSRF shoud put after body-parser, cookie-parser, express-session
-app.use(require('csurf')());
+// app.use(require('csurf')());
 app.use( (req, res, next) => {
-  res.locals._csrfToken = req.csrfToken();
+  // res.locals._csrfToken = req.csrfToken();
   next();
 });
 //gzip compression
@@ -389,6 +354,58 @@ app.get('/logout', (req, res) => {
   req.logout();
   req.session.destroy();
   res.redirect("/login");
+});
+
+app.get('/upload', (req,res) => {
+  res.render('upload', { csrf: 'CSRF token goes here' });
+});
+
+let upload = multer({ //multer settings
+                storage: storage,
+                fileFilter : function(req, file, callback) { //file filter
+                    if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
+                        return callback(new Error('Wrong extension type'));
+                    }
+                    callback(null, true);
+                }
+            }).single('file');
+
+app.post('/upload', (req, res) => {
+    let exceltojson;
+    upload(req,res, (err) => {
+        if(err){
+             res.json({error_code:1,err_desc:err});
+             return;
+        }
+        /** Multer gives us file info in req.file object */
+        if(!req.file){
+            res.json({error_code:1,err_desc:"No file passed"});
+            return;
+        }
+        /** Check the extension of the incoming file and 
+         *  use the appropriate module
+         */
+        if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
+            exceltojson = xlsxtojson;
+        } else {
+            exceltojson = xlstojson;
+        }
+        try {
+            exceltojson({
+                input: req.file.path,
+                output: null, //since we don't need output.json
+                lowerCaseHeaders:true
+            }, function(err,result){
+                if(err) {
+                    return res.json({error_code:1,err_desc:err, data: null});
+                } 
+                console.log(result);
+                res.json({error_code:0,err_desc:null, data: result});
+            });
+        } catch (e){
+            res.json({error_code:1,err_desc:"Corupted excel file"});
+        }
+    })
 });
 
 //new commer register page
