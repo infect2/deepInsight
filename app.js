@@ -13,7 +13,7 @@ let mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 let emailService = email(credentials);
 let Vacation = require('./models/vacation.js');
-let VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
+// let VacationInSeasonListener = require('./models/vacationInSeasonListenesdr.js');
 let Dealer = require('./models/dealer.js');
 let User = require('./models/user.js');
 let passport = require('passport');
@@ -24,7 +24,7 @@ let expressVue = require('express-vue');
 let path = require('path');
 let logger = require('express-fluent-logger');
 let amqp = require('amqp');
-let rabbit = amqp.createConnection({ host: '172.17.0.6' });
+let rabbit = amqp.createConnection({ host: '172.17.0.8' });
 
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
@@ -150,7 +150,7 @@ let opts = {
 
 //logger setting
 app.use(logger('deepinsight',{
-  host:'172.17.0.5',
+  host:'172.17.0.7',
   port: 24224,
   timeout: 3.0,
   responseHeaders: ['x-userid']

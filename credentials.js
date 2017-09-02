@@ -6,10 +6,10 @@ module.exports = {
   },
   mongo: {
     development: {
-      connectionString: "mongodb://172.17.0.2:27017/test",
+      connectionString: "mongodb://172.17.0.4:27017/test",
     },
     production: {
-      connectionString: "mongodb://172.17.0.2:27017/test"
+      connectionString: "mongodb://172.17.0.4:27017/test"
     }
   },
   authProviders: {
