@@ -254,9 +254,67 @@ app.use(session({
     mongooseConnection: mongoose.connection
   })
 }));
+
+// multipart upload should be put in in front of crsf verification middleware
+// please refere to the issue in https://github.com/expressjs/csurf/issues/58
+app.post('/upload', (req, res) => {
+    let exceltojson;
+    let upload = multer({ //multer settings
+                    storage: storage,
+                    fileFilter : function(req, file, callback) { //file filter
+                        if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
+                            return callback(new Error('Wrong extension type'));
+                        }
+                        // csrf((req, res, error)=>{
+                        //   if(error) {
+                        //     console.log('CSRF error');
+                        //     return callback(new Error('Mal-formed data'));
+                        //   } else {
+                        //     callback(null,true);
+                        //   }
+                        // });
+                        callback(null, true);
+                    }
+                }).single('file');
+    upload(req,res, (err) => {
+        if(err){
+             res.json({error_code:1,err_desc:err});
+             return;
+        }
+        /** Multer gives us file info in req.file object */
+        if(!req.file){
+            res.json({error_code:1,err_desc:"No file passed"});
+            return;
+        }
+        /** Check the extension of the incoming file and 
+         *  use the appropriate module
+         */
+        if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
+            exceltojson = xlsxtojson;
+        } else {
+            exceltojson = xlstojson;
+        }
+        try {
+            exceltojson({
+                input: req.file.path,
+                output: null, //since we don't need output.json
+                lowerCaseHeaders:true
+            }, function(err,result){
+                if(err) {
+                    return res.json({error_code:1,err_desc:err, data: null});
+                } 
+                console.log(result);
+                res.json({error_code:0,err_desc:null, data: result});
+            });
+        } catch (e){
+            res.json({error_code:1,err_desc:"Corupted excel file"});
+        }
+    })
+});
+let csrf = require('csurf')()
 //CSRF shoud put after body-parser, cookie-parser, express-session
-app.use(require('csurf')());
-app.use( (req, res, next) => {
+app.use(csrf);
+app.use((req, res, next) => {
   res.locals._csrfToken = req.csrfToken();
   next();
 });
@@ -264,7 +322,7 @@ app.use( (req, res, next) => {
 app.use(compression());
 
 // flash message middleware
-app.use( (req, res, next) => {
+app.use((req, res, next) => {
         // if there's a flash message, transfer
         // it to the context, then clear it
         res.locals.flash = req.session.flash;
@@ -272,7 +330,8 @@ app.use( (req, res, next) => {
         next();
 });
 
-app.use( (req, res, next) => {
+// cluster
+app.use((req, res, next) => {
   let cluster = require('cluster');
   if(cluster.isWorker) {
     console.log('Worker %d processing request for %s', cluster.worker.id, req.url);
@@ -358,54 +417,6 @@ app.get('/logout', (req, res) => {
 
 app.get('/upload', (req,res) => {
   res.render('upload', { csrf: 'CSRF token goes here' });
-});
-
-let upload = multer({ //multer settings
-                storage: storage,
-                fileFilter : function(req, file, callback) { //file filter
-                    if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
-                        return callback(new Error('Wrong extension type'));
-                    }
-                    callback(null, true);
-                }
-            }).single('file');
-
-app.post('/upload', (req, res) => {
-    let exceltojson;
-    upload(req,res, (err) => {
-        if(err){
-             res.json({error_code:1,err_desc:err});
-             return;
-        }
-        /** Multer gives us file info in req.file object */
-        if(!req.file){
-            res.json({error_code:1,err_desc:"No file passed"});
-            return;
-        }
-        /** Check the extension of the incoming file and 
-         *  use the appropriate module
-         */
-        if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
-            exceltojson = xlsxtojson;
-        } else {
-            exceltojson = xlstojson;
-        }
-        try {
-            exceltojson({
-                input: req.file.path,
-                output: null, //since we don't need output.json
-                lowerCaseHeaders:true
-            }, function(err,result){
-                if(err) {
-                    return res.json({error_code:1,err_desc:err, data: null});
-                } 
-                console.log(result);
-                res.json({error_code:0,err_desc:null, data: result});
-            });
-        } catch (e){
-            res.json({error_code:1,err_desc:"Corupted excel file"});
-        }
-    })
 });
 
 //new commer register page
