@@ -11,10 +11,14 @@ let connect = require('connect');
 let compression = require('compression');
 let fs = require('fs');
 let email = require('./lib/email.js');
+
 let mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 let emailService = email(credentials);
+
 let User = require('./models/user.js');
+let Questionnaire = require('./models/questionnaire.js');
+
 let passport = require('passport');
 let LocalStrategy = require('passport-local').Strategy;
 let crypto = require('crypto');
@@ -44,11 +48,11 @@ let getUserNameFromAuthID = (req) => {
 //multers disk storage settings
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
-      cb(null, EXCEL_UPLOAD_DIRECTORY)
+    cb(null, EXCEL_UPLOAD_DIRECTORY)
   },
   filename: (req, file, cb) => {
-      let datetimestamp = Date.now();
-      cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1])
+    let datetimestamp = Date.now();
+    cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1])
   }
 });
 
@@ -201,7 +205,7 @@ app.use((req, res, next) => {
     domain.run(next);
 });
 
-let opts = {
+let mongoOpts = {
   useMongoClient: true,
   server: {
     socketOptions: {keepAlive: 1}
@@ -222,13 +226,13 @@ switch(app.get('env')){
   case 'development':
     console.log("development mode");
     app.use(require('morgan')('dev'));
-    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', opts);
-    // mongoose.connect(credentials.mongo.development.connectionString, opts);
+    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', mongoOpts);
+    // mongoose.connect(credentials.mongo.development.connectionString, mongoOpts);
     break;
   case 'production':
     console.log("production mode");
-    // mongoose.connect(credentials.mongo.development.connectionString, opts);
-    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', opts);
+    // mongoose.connect(credentials.mongo.development.connectionString, mongoOpts);
+    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', mongoOpts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
     }));
@@ -422,8 +426,9 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
                 if(err) {
                     return res.json({error_code:1,err_desc:err, data: null});
                 } 
-                console.log(result);
-                res.json({error_code:0,err_desc:null, data: result});
+                addNewQuestionnaire("0.99", "alim com", result, (err, questionnaire)=>{
+                  res.json({error_code:err,err_desc:null, data: result});
+                });
             });
         } catch (e){
             res.json({error_code:1,err_desc:"Corupted excel file"});
@@ -435,6 +440,26 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
 app.get('/register', (req, res) => {
     res.render('register', { csrf: 'CSRF token goes here' });
 });
+
+//add a new questionnaire
+//if the given version already exists, it will be updated with a new version
+let addNewQuestionnaire = (version, name, content, cb) => {
+  let questionnaire = new Questionnaire({
+    id: "id-field-to-be-replaced",
+    version: version,
+    name: name,
+    content: JSON.stringify(content),
+    created: Date.now(),
+    lastUpdated: null
+  });
+
+  questionnaire.save((err) => {
+    if(err) {
+      return cb(err, null);
+    }
+    cb(null, questionnaire);
+  });
+};
 
 let addNewUser = (authId, password, name, role, cb) => {
   let newUser = {
@@ -461,10 +486,9 @@ let addNewUser = (authId, password, name, role, cb) => {
         }
         newUser.cb(null, user);
       });
-
     });
   });
-}
+};
 
 //add a new user to user DB
 app.post('/register', (req, res) => {
