@@ -3,6 +3,7 @@ let https = require('https');
 let express = require('express');
 let bodyParser = require('body-parser');
 let session = require('express-session');
+let csrf = require('csurf')()
 let fortune = require('./lib/fortune.js');
 let formidable = require('formidable');
 let credentials = require('./credentials.js');
@@ -13,7 +14,6 @@ let email = require('./lib/email.js');
 let mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 let emailService = email(credentials);
-let Dealer = require('./models/dealer.js');
 let User = require('./models/user.js');
 let passport = require('passport');
 let LocalStrategy = require('passport-local').Strategy;
@@ -23,7 +23,6 @@ let expressVue = require('express-vue');
 let path = require('path');
 let logger = require('express-fluent-logger');
 let amqp = require('amqp');
-let rabbit = amqp.createConnection({ host: '172.17.0.8' });
 
 let multer = require('multer');
 let xlstojson = require("xls-to-json-lc");
@@ -52,9 +51,21 @@ let storage = multer.diskStorage({
     }
 });
 
-//RabbitMQ integration
-let messageExchange;
+const app = express();
 
+// running enviroment setting
+app.set('port', process.env.PORT || 3000);
+app.set('mongodbIP', process.env.MONGODB.split(':')[0] || '172.17.0.4');
+app.set('mongodbPort', process.env.MONGODB.split(':')[1] || '27017');
+app.set('rabbitmqIP', process.env.RABBITMQ || '172.17.0.8');
+app.set('loggerIP', process.env.LOGGER.split(':')[0] || '172.17.0.7');
+app.set('loggerPort', process.env.LOGGER.split(':')[1] || '24224');
+
+//RabbitMQ integration
+// let rabbit = amqp.createConnection({ host: app.get('rabbitmqIp') });
+let rabbit = amqp.createConnection({ host: app.get('rabbitmqIP') });
+
+let messageExchange;
 rabbit.on('ready', () => {
   console.log('RabbitMQ is ready');
   rabbit.exchange('my-first-exchange', {type:'direct', autoDelete: false}, (ex) => {
@@ -71,8 +82,6 @@ rabbit.on('ready', () => {
     });
   });
 });
-
-const app = express();
 
 //view engine, or handlebars setting
 let handlebars = require('express-handlebars').create({
@@ -152,8 +161,6 @@ app.use((req, res, next) => {
     domain.run(next);
 });
 
-app.set('port', process.env.PORT || 3000);
-
 let opts = {
   useMongoClient: true,
   server: {
@@ -165,8 +172,8 @@ let opts = {
 
 //logger setting
 app.use(logger('deepinsight',{
-  host:'172.17.0.7',
-  port: 24224,
+  host: app.get('loggerIP'),
+  port: app.get('loggerPort'),
   timeout: 3.0,
   responseHeaders: ['x-userid']
 }));
@@ -175,11 +182,13 @@ switch(app.get('env')){
   case 'development':
     console.log("development mode");
     app.use(require('morgan')('dev'));
-    mongoose.connect(credentials.mongo.development.connectionString, opts);
+    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', opts);
+    // mongoose.connect(credentials.mongo.development.connectionString, opts);
     break;
   case 'production':
     console.log("production mode");
-    mongoose.connect(credentials.mongo.development.connectionString, opts);
+    // mongoose.connect(credentials.mongo.development.connectionString, opts);
+    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', opts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
     }));
@@ -311,7 +320,7 @@ app.post('/upload', (req, res) => {
         }
     })
 });
-let csrf = require('csurf')()
+
 //CSRF shoud put after body-parser, cookie-parser, express-session
 app.use(csrf);
 app.use((req, res, next) => {
