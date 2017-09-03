@@ -340,10 +340,6 @@ app.get('/about',  (req, res) => {
   });
 });
 
-app.get('/thank-you', (req, res) => {
-  res.render('thank-you');
-});
-
 //login page display
 app.get('/login', (req, res) => {
   if(!!req.user) {
@@ -422,7 +418,7 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
                 input: req.file.path,
                 output: null, //since we don't need output.json
                 lowerCaseHeaders:true
-            }, function(err,result){
+            }, function(err, result){
                 if(err) {
                     return res.json({error_code:1,err_desc:err, data: null});
                 } 
@@ -468,7 +464,7 @@ let addNewUser = (authId, password, name, role, cb) => {
     name,
     role,
     cb
-  }
+  };
 
   crypto.randomBytes(16, function (err, salt) {
     if (err) throw err;
@@ -588,7 +584,7 @@ let startServer = () => {
       ' mode on http://localhost:' + app.get('port') +
       '; press Ctrl-C to terminate.' );
   });
-}
+};
 
 if(require.main === module){
   // application run directly; start app server
