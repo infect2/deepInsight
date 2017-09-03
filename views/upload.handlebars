@@ -2,7 +2,7 @@
 <form id       =  "uploadForm"
      enctype   =  "multipart/form-data"
      role      =  "form"
-     action    =  "/upload"
+     action    =  "/upload?_csrf={{_csrfToken}}"
      method    =  "post"
 >
 <input type="hidden" name="_csrf" value="{{_csrfToken}}">

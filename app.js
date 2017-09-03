@@ -52,6 +52,46 @@ let storage = multer.diskStorage({
     }
 });
 
+//authentication
+let ensureAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('login');
+}
+
+let validateID = (userId) => {
+  console.log("Fix Me: validateID");
+  return true;
+}
+
+let validatePassword = (passwd) => {
+  console.log("Fix Me: validatePassword");
+  return true;
+}
+
+//authorization utilities
+let allow = (roles) => {
+        return (req, res, next) => {
+                if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
+                res.redirect(303, '/unauthorized');
+        };
+}
+
+// authorization helpers
+let customerOnly = (req, res, next) => {
+        if(req.user && req.user.role==='customer') return next();
+        // we want customer-only pages to know they need to logon
+        res.redirect(303, '/unauthorized');
+}
+
+let employeeOnly = (req, res, next) => {
+        if(req.user && req.user.role==='employee') return next();
+        // we want employee-only authorization failures to be "hidden", to
+        // prevent potential hackers from even knowhing that such a page exists
+        res.redirect(303, '/unauthorized');
+}
+
 const app = express();
 
 // running enviroment setting
@@ -63,7 +103,6 @@ app.set('loggerIP', process.env.LOGGER.split(':')[0] || '172.17.0.7');
 app.set('loggerPort', process.env.LOGGER.split(':')[1] || '24224');
 
 //RabbitMQ integration
-// let rabbit = amqp.createConnection({ host: app.get('rabbitmqIp') });
 let rabbit = amqp.createConnection({ host: app.get('rabbitmqIP') });
 
 let messageExchange;
@@ -227,69 +266,13 @@ app.use(session({
   })
 }));
 
-// multipart upload should be put in in front of crsf verification middleware
-// please refere to the issue in https://github.com/expressjs/csurf/issues/58
-app.post('/upload', (req, res) => {
-    let exceltojson;
-    let upload = multer({ //multer settings
-                    storage: storage,
-                    fileFilter : function(req, file, callback) { //file filter
-                        if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
-                            return callback(new Error('Wrong extension type'));
-                        }
-                        // csrf((req, res, error)=>{
-                        //   if(error) {
-                        //     console.log('CSRF error');
-                        //     return callback(new Error('Mal-formed data'));
-                        //   } else {
-                        //     callback(null,true);
-                        //   }
-                        // });
-                        callback(null, true);
-                    }
-                }).single('file');
-    upload(req,res, (err) => {
-        if(err){
-             res.json({error_code:1,err_desc:err});
-             return;
-        }
-        /** Multer gives us file info in req.file object */
-        if(!req.file){
-            res.json({error_code:1,err_desc:"No file passed"});
-            return;
-        }
-        /** Check the extension of the incoming file and 
-         *  use the appropriate module
-         */
-        if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
-            exceltojson = xlsxtojson;
-        } else {
-            exceltojson = xlstojson;
-        }
-        try {
-            exceltojson({
-                input: req.file.path,
-                output: null, //since we don't need output.json
-                lowerCaseHeaders:true
-            }, function(err,result){
-                if(err) {
-                    return res.json({error_code:1,err_desc:err, data: null});
-                } 
-                console.log(result);
-                res.json({error_code:0,err_desc:null, data: result});
-            });
-        } catch (e){
-            res.json({error_code:1,err_desc:"Corupted excel file"});
-        }
-    })
-});
-
 //CSRF shoud put after body-parser, cookie-parser, express-session
 app.use(csrf);
 app.use((req, res, next) => {
   res.locals._csrfToken = req.csrfToken();
   next();
 });
+
 //gzip compression
 app.use(compression());
 
@@ -387,31 +370,71 @@ app.get('/logout', (req, res) => {
   res.redirect("/login");
 });
 
-app.get('/upload', (req,res) => {
+app.get('/upload', ensureAuthenticated, (req,res) => {
   res.render('upload', { csrf: 'CSRF token goes here' });
+});
+
+// multipart upload should be put in in front of crsf verification middleware
+// please refere to the issue in https://github.com/expressjs/csurf/issues/58
+app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) => {
+    let exceltojson;
+    let upload = multer({ //multer settings
+                    storage: storage,
+                    fileFilter : function(req, file, callback) { //file filter
+                        if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
+                            return callback(new Error('Wrong extension type'));
+                        }
+                        // csrf((req, res, error)=>{
+                        //   if(error) {
+                        //     console.log('CSRF error');
+                        //     return callback(new Error('Mal-formed data'));
+                        //   } else {
+                        //     callback(null,true);
+                        //   }
+                        // });
+                        callback(null, true);
+                    }
+                }).single('file');
+    upload(req,res, (err) => {
+        if(err){
+             res.json({error_code:1,err_desc:err});
+             return;
+        }
+        /** Multer gives us file info in req.file object */
+        if(!req.file){
+            res.json({error_code:1,err_desc:"No file passed"});
+            return;
+        }
+        /** Check the extension of the incoming file and 
+         *  use the appropriate module
+         */
+        if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
+            exceltojson = xlsxtojson;
+        } else {
+            exceltojson = xlstojson;
+        }
+        try {
+            exceltojson({
+                input: req.file.path,
+                output: null, //since we don't need output.json
+                lowerCaseHeaders:true
+            }, function(err,result){
+                if(err) {
+                    return res.json({error_code:1,err_desc:err, data: null});
+                } 
+                console.log(result);
+                res.json({error_code:0,err_desc:null, data: result});
+            });
+        } catch (e){
+            res.json({error_code:1,err_desc:"Corupted excel file"});
+        }
+    })
 });
 
 //new commer register page
 app.get('/register', (req, res) => {
     res.render('register', { csrf: 'CSRF token goes here' });
 });
-
-let ensureAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.redirect('login');
-}
-
-let validateID = (userId) => {
-  console.log("Fix Me: validateID");
-  return true;
-}
-
-let validatePassword = (passwd) => {
-  console.log("Fix Me: validatePassword");
-  return true;
-}
 
 let  addNewUser = (authId, password, name, role, cb) => {
   let newUser = {
@@ -442,6 +465,7 @@ let  addNewUser = (authId, password, name, role, cb) => {
     });
   });
 }
+
 //add a new user to user DB
 app.post('/register', (req, res) => {
   let response;
@@ -494,7 +518,7 @@ app.get('/epic-fail', (req, res) => {
   });
 });
 
-//REST API
+//REST API Example
 app.get('/api/purpose', (req, res) => {
   res.json({
           name: "deepinsight",
@@ -503,25 +527,6 @@ app.get('/api/purpose', (req, res) => {
           location: "South Korea",
   });
 });
-
-// authorization helpers
-let customerOnly = (req, res, next) => {
-        if(req.user && req.user.role==='customer') return next();
-        // we want customer-only pages to know they need to logon
-        res.redirect(303, '/unauthorized');
-}
-let employeeOnly = (req, res, next) => {
-        if(req.user && req.user.role==='employee') return next();
-        // we want employee-only authorization failures to be "hidden", to
-        // prevent potential hackers from even knowhing that such a page exists
-        next('route');
-}
-let allow = (roles) => {
-        return (req, res, next) => {
-                if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
-                res.redirect(303, '/unauthorized');
-        };
-}
 
 app.get('/unauthorized', (req, res) => {
         res.status(403).render('unauthorized');
