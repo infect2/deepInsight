@@ -43,13 +43,13 @@ let getUserNameFromAuthID = (req) => {
 
 //multers disk storage settings
 let storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, EXCEL_UPLOAD_DIRECTORY)
-    },
-    filename: (req, file, cb) => {
-        let datetimestamp = Date.now();
-        cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1])
-    }
+  destination: (req, file, cb) => {
+      cb(null, EXCEL_UPLOAD_DIRECTORY)
+  },
+  filename: (req, file, cb) => {
+      let datetimestamp = Date.now();
+      cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1])
+  }
 });
 
 //authentication
@@ -72,24 +72,24 @@ let validatePassword = (passwd) => {
 
 //authorization utilities
 let allow = (roles) => {
-        return (req, res, next) => {
-                if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
-                res.redirect(303, '/unauthorized');
-        };
+  return (req, res, next) => {
+          if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
+          res.redirect(303, '/unauthorized');
+  };
 }
 
 // authorization helpers
 let customerOnly = (req, res, next) => {
-        if(req.user && req.user.role==='customer') return next();
-        // we want customer-only pages to know they need to logon
-        res.redirect(303, '/unauthorized');
+  if(req.user && req.user.role==='customer') return next();
+  // we want customer-only pages to know they need to logon
+  res.redirect(303, '/unauthorized');
 }
 
 let employeeOnly = (req, res, next) => {
-        if(req.user && req.user.role==='employee') return next();
-        // we want employee-only authorization failures to be "hidden", to
-        // prevent potential hackers from even knowhing that such a page exists
-        res.redirect(303, '/unauthorized');
+  if(req.user && req.user.role==='employee') return next();
+  // we want employee-only authorization failures to be "hidden", to
+  // prevent potential hackers from even knowhing that such a page exists
+  res.redirect(303, '/unauthorized');
 }
 
 const app = express();
@@ -296,10 +296,10 @@ app.use((req, res, next) => {
 
 //Authentication
 let auth = require('./lib/auth.js')(app, {
-        baseUrl: process.env.BASE_URL,
-        providers: credentials.authProviders,
-        successRedirect: '/account',
-        failureRedirect: '/unauthorized',
+  baseUrl: process.env.BASE_URL,
+  providers: credentials.authProviders,
+  successRedirect: '/account',
+  failureRedirect: '/unauthorized',
 });
 // auth.init() links in Passport middleware:
 auth.init();
@@ -436,7 +436,7 @@ app.get('/register', (req, res) => {
     res.render('register', { csrf: 'CSRF token goes here' });
 });
 
-let  addNewUser = (authId, password, name, role, cb) => {
+let addNewUser = (authId, password, name, role, cb) => {
   let newUser = {
     authId,
     password,
@@ -501,13 +501,13 @@ app.post('/register', (req, res) => {
     console.log("User Registeration Error", error.stack);
     res.redirect(303, '/register');
   }
-
 });
 
 app.get('/newsletter', ensureAuthenticated, (req, res) => {
-    res.render('newsletter', { csrf: 'CSRF token goes here' });
+  res.render('newsletter', { csrf: 'CSRF token goes here' });
 });
 
+//fale safe test purpose
 app.get('/fail', (req, res) => {
   throw new Error("Intended!");
 });
@@ -529,7 +529,7 @@ app.get('/api/purpose', (req, res) => {
 });
 
 app.get('/unauthorized', (req, res) => {
-        res.status(403).render('unauthorized');
+  res.status(403).render('unauthorized');
 });
 
 // customer routes
@@ -559,16 +559,16 @@ let options = {
 };
 
 let startServer = () => {
-    server = https.createServer(options, app).listen(app.get('port'), () => {
-      console.log( 'Express started in ' + app.get('env') +
-        ' mode on http://localhost:' + app.get('port') +
-        '; press Ctrl-C to terminate.' );
-    });
+  server = https.createServer(options, app).listen(app.get('port'), () => {
+    console.log( 'Express started in ' + app.get('env') +
+      ' mode on http://localhost:' + app.get('port') +
+      '; press Ctrl-C to terminate.' );
+  });
 }
 
 if(require.main === module){
-    // application run directly; start app server
-    startServer();
+  // application run directly; start app server
+  startServer();
 } else {
     // application imported as a module via "require": export function to create server
     module.exports = startServer;
