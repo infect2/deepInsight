@@ -6,11 +6,11 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	    <title>Meadowlark Travel</title>
-		{{#if showTests}}
-			<link rel="stylesheet" href="/vendor/mocha.css">
-		{{/if}}
-		{{{_sections.head}}}
+        <title>Meadowlark Travel</title>
+        {{#if showTests}}
+            <link rel="stylesheet" href="/vendor/mocha.css">
+        {{/if}}
+        {{{_sections.head}}}
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -31,43 +31,43 @@
             <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
 
-		<header><img width='300px' src="/img/survey.jpg" alt="Meadowlark Travel Logo"></header>
+        <header><img width='300px' src="/img/survey.jpg" alt="Meadowlark Travel Logo"></header>
 
-	    <div class="container">
-	    	{{#if flash}}
-	    	        <div class="alert alert-dismissible alert-{{flash.type}}">
-	    	                <button type="button" class="close"
-	    	                        data-dismiss="alert" aria-hidden="true">&times;</button>
-	    	                <strong>{{flash.intro}}</strong> {{{flash.message}}}
-	    	        </div>
-	    	{{/if}}
-		    {{{body}}}
+        <div class="container">
+            {{#if flash}}
+                    <div class="alert alert-dismissible alert-{{flash.type}}">
+                            <button type="button" class="close"
+                                    data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <strong>{{flash.intro}}</strong> {{{flash.message}}}
+                    </div>
+            {{/if}}
+            {{{body}}}
 
-			<hr>
+            <hr>
 
-			<footer>
-				<p>&copy; Meadowlark Travel 2014</p>
-			</footer>
-	    </div> <!-- /container -->        
+            <footer>
+                <p>&copy; DeepInsight 2017</p>
+            </footer>
+        </div> <!-- /container -->        
 
         <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
         <script>window.jQuery || document.write('<script src="/vendor/js/jquery-2.1.1.min.js"><\/script>')</script>
-    	{{{_sections.jquery}}}
+        {{{_sections.jquery}}}
 
-		{{#if showTests}}
-			<div id="mocha"></div>
-			<script src="/vendor/mocha.js"></script>
-			<script src="/vendor/chai.js"></script>
-			<script>
-				mocha.ui('tdd');
-				var assert = chai.assert;
-			</script>
-			<script src="/qa/tests-global.js"></script>
-			{{#if pageTestScript}}
-				<script src="{{pageTestScript}}"></script>
-			{{/if}}
-			<script>mocha.run();</script>
-		{{/if}}
+        {{#if showTests}}
+            <div id="mocha"></div>
+            <script src="/vendor/mocha.js"></script>
+            <script src="/vendor/chai.js"></script>
+            <script>
+                mocha.ui('tdd');
+                var assert = chai.assert;
+            </script>
+            <script src="/qa/tests-global.js"></script>
+            {{#if pageTestScript}}
+                <script src="{{pageTestScript}}"></script>
+            {{/if}}
+            <script>mocha.run();</script>
+        {{/if}}
 
         <script src="/vendor/bootstrap/js/bootstrap.min.js"></script>
         <script src="/js/main.js"></script>

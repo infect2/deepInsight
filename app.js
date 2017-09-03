@@ -37,6 +37,7 @@ const MAX_PASSWORD_LENGTH = 20;
 const AUTHID_PREFIX = 'deepinsight:';
 const EXCEL_UPLOAD_DIRECTORY = './uploads/';
 const LOGGER_TIMEOUT = 3.0;
+const DB_NAME = "test";
 
 // 'deepinsight:' is a prefix for our user ID storage rule
 // Thus remove it from authId before sending it to user
@@ -226,13 +227,11 @@ switch(app.get('env')){
   case 'development':
     console.log("development mode");
     app.use(require('morgan')('dev'));
-    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', mongoOpts);
-    // mongoose.connect(credentials.mongo.development.connectionString, mongoOpts);
+    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/' + DB_NAME, mongoOpts);
     break;
   case 'production':
     console.log("production mode");
-    // mongoose.connect(credentials.mongo.development.connectionString, mongoOpts);
-    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/test', mongoOpts);
+    mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/' + DB_NAME, mongoOpts);
     app.use(require('express-logger')({
       path: __dirname + '/log/requests.log'
     }));
@@ -434,7 +433,43 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
 
 //new commer register page
 app.get('/register', (req, res) => {
-    res.render('register', { csrf: 'CSRF token goes here' });
+  res.render('register', { csrf: 'CSRF token goes here' });
+});
+
+//show questionnaire list
+let getQuestionnaireList = (cb) => {
+  Questionnaire.find(function (err, result) {
+    if (err) {
+      cb(err, null);
+    } else {
+      cb(null, result.map( (data) => {
+        return data.name;
+      } ));
+    }
+  });
+};
+
+app.get('/questionnaire/list', (req, res) => {
+  getQuestionnaireList((err, result) => {
+    res.render('questionnaire_list', {questionnaire: result});
+  });
+});
+
+let getContentFromQuestionnaire = (version, name, cb) => {
+  // cb(null, "Hello Content");
+  Questionnaire.find( {version: version, name: name}, function (err, result) {
+    if (err) {
+      cb(err, null);
+    } else {
+      cb(null, result);
+    }
+  });
+};
+
+app.get('/questionnaire/showContent', (req, res) => {
+  getContentFromQuestionnaire( req.query['version'], req.query['name'], (err, result) => {
+    res.render('questionnaire_detail', {content: result});
+  });
 });
 
 //add a new questionnaire

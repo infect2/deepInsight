@@ -1,0 +1,7 @@
+<h1>Questionnaire</h1>
+{{#each questionnaire}}
+    <div class="vacation">
+        {{@index}}: {{this}}
+        <a href="/questionnaire/showContent?version=0.99&name={{this}}" class="btn btn-default">See All Questions</a>
+    </div>
+{{/each}}
