@@ -31,7 +31,8 @@ let xlsxtojson = require("xlsx-to-json-lc");
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
 const AUTHID_PREFIX = 'deepinsight:';
-const EXCEL_UPLOAD_DIRECTORY = './uploads/'
+const EXCEL_UPLOAD_DIRECTORY = './uploads/';
+const LOGGER_TIMEOUT = 3.0;
 
 // 'deepinsight:' is a prefix for our user ID storage rule
 // Thus remove it from authId before sending it to user
@@ -174,7 +175,7 @@ let opts = {
 app.use(logger('deepinsight',{
   host: app.get('loggerIP'),
   port: app.get('loggerPort'),
-  timeout: 3.0,
+  timeout: LOGGER_TIMEOUT,
   responseHeaders: ['x-userid']
 }));
 
@@ -205,44 +206,6 @@ app.use('/api', require('cors')());
 //test page support. it should be placed in front of other routers
 app.use( (req, res, next) => {
   res.locals.showTests = app.get('env') !== 'production' && req.query.test === '1';
-  next();
-});
-
-// mocked weather data for partials, or Handlebars Widget
-let getWeatherData = () => {
-    return {
-        locations: [
-            {
-                name: 'Portland',
-                forecastUrl: 'http://www.wunderground.com/US/OR/Portland.html',
-                iconUrl: 'http://icons-ak.wxug.com/i/c/k/cloudy.gif',
-                weather: 'Overcast',
-                temp: '54.1 F (12.3 C)',
-            },
-            {
-                name: 'Bend',
-                forecastUrl: 'http://www.wunderground.com/US/OR/Bend.html',
-                iconUrl: 'http://icons-ak.wxug.com/i/c/k/partlycloudy.gif',
-                weather: 'Partly Cloudy',
-                temp: '55.0 F (12.8 C)',
-            },
-            {
-                name: 'Manzanita',
-                forecastUrl: 'http://www.wunderground.com/US/OR/Manzanita.html',
-                iconUrl: 'http://icons-ak.wxug.com/i/c/k/rain.gif',
-                weather: 'Light Rain',
-                temp: '55.0 F (12.8 C)',
-            },
-        ],
-    };
-}
-
-// middleware to add weather data to context
-app.use( (req, res, next) => {
-  if(!res.locals.partials) {
-    res.locals.partials = {};
-  }
-  res.locals.partials.weatherContext = getWeatherData();
   next();
 });
 
