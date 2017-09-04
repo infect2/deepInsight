@@ -443,8 +443,11 @@ let getQuestionnaireList = (cb) => {
       cb(err, null);
     } else {
       cb(null, result.map( (data) => {
-        return data.name;
-      } ));
+        return {
+          name: data.name,
+          version: data.version
+        }
+      }));
     }
   });
 };
