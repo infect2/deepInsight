@@ -6,7 +6,7 @@
   "scripts": {
     "start": "NODE_ENV='production' nodemon cluster.js",
     "start-single": "NODE_ENV='production' nodemon app.js",
-    "development": "NODE_ENV='development' nodemon --inspect app.js",
+    "development": "NODE_ENV='development' MONGODB='172.17.0.4:27017' RABBITMQ='172.17.0.8' LOGGER='172.17.0.7:24224' nodemon --inspect app.js",
     "development-cluster": "NODE_ENV='development' nodemon --inspect cluster.js"
   },
   "repository": {
@@ -23,6 +23,7 @@
     "amqp": "^0.2.6",
     "argon2": "^0.16.1",
     "async": "^2.5.0",
+    "bluebird": "^3.5.0",
     "body-parser": "^1.17.2",
     "compression": "^1.7.0",
     "connect": "^3.6.3",

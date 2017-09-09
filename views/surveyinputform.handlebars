@@ -1,0 +1,22 @@
+<h1>Please Choose What You Think</h1>
+<script>var content = {{{content}}};</script>
+<div id="questionnaire">
+</div>
+<button> Submit </button>
+<button> Save </button>
+{{#section 'jquery'}}
+    <script>
+        $(document).ready(function(){
+           var radioHtml = '1<input type="radio" name="editList%%%" value="always">';
+           radioHtml += '2<input type="radio" name="editList%%%" value="always">';
+           radioHtml += '3<input type="radio" name="editList%%%" value="always">';
+           radioHtml += '4<input type="radio" name="editList%%%" value="always">';
+           radioHtml += '5<input type="radio" name="editList%%%" value="always">';
+           content.forEach(function(data, idx){
+             if(!!data && data.length>0) {
+                 $("<div>" + data + " " + radioHtml.replace(/%%%/gi, idx.toString()) + "</div>").appendTo("#questionnaire");
+               }
+            });
+        });
+    </script>
+{{/section}}

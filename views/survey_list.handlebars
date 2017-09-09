@@ -1,0 +1,10 @@
+<h1>Survey List</h1>
+{{#each survey}}
+    <div>
+        {{@index}}:
+        Client Name: {{this.clientName}}
+        Survey Name: {{this.surveyName}}
+        State: {{this.state}}
+        <a href="/survey/participate?questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default">Participate Survey</a>
+    </div>
+{{/each}}

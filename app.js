@@ -13,7 +13,7 @@ let fs = require('fs');
 let email = require('./lib/email.js');
 
 let mongoose = require('mongoose');
-mongoose.Promise = require('bluebird');
+let Promise = require('bluebird');
 let emailService = email(credentials);
 
 //Model Schema Import
@@ -45,6 +45,8 @@ const AUTHID_PREFIX = 'deepinsight:';
 const EXCEL_UPLOAD_DIRECTORY = './uploads/';
 const LOGGER_TIMEOUT = 3.0;
 const DB_NAME = "test";
+
+mongoose.Promise = Promise;
 
 // 'deepinsight:' is a prefix for our user ID storage rule
 // Thus remove it from authId before sending it to user
@@ -324,16 +326,16 @@ app.get('/',  (req, res) => {
 
 app.get('/vue-template', (req, res, next) => {
     let data = {
-        otherData: 'Something Else' 
+        otherData: 'Something Else'
     };
     let vueOptions = {
         head: {
             title: 'Page Title',
-            meta: [ 
+            meta: [
                 { property:'og:title', content: 'Page Title'},
                 { name:'twitter:title', content: 'Page Title'},
             ]
-        }    
+        }
     }
     res.renderVue('main', data, vueOptions);
 });
@@ -512,7 +514,9 @@ app.get('/survey/fail', (req, res) => {
 
 //create survey from questionnaire
 app.get('/survey/create', (req,res) => {
-  res.render('createsurvey', { name: "alim com", version: "v0.99"});
+  let name = req.query['name'];
+  let version = req.query['version'];
+  res.render('createsurvey', { name, version });
 });
 
 // check if start date and date are correct
@@ -597,6 +601,71 @@ let addNewUser = (authId, password, name, role, cb) => {
     });
   });
 };
+
+//show questionnaire list
+let getSurveyList = (cb) => {
+  Survey.find(function (err, result) {
+    if (err) {
+      cb(err, null);
+    } else {
+      cb(null, result.map( (data) => {
+        return {
+          id: data.id,
+          questionnaireID: data.questionnaireID,
+          clientName: data.clientName,
+          surveyName: data.surveyName,
+          state: data.state,
+          startDate: data.startDate,
+          endDate: data.endDate
+        };
+      }));
+    }
+  });
+};
+
+app.get('/survey/list', (req, res) => {
+  getSurveyList((err, result) => {
+    res.render('survey_list', {survey: result});
+  });
+});
+
+let getSurveyChoiceData = (name, version, cb) => {
+  Questionnaire.find( { name: name, version: version }, function (err, result) {
+    if (err) {
+      cb(err, null);
+    } else {
+      cb(null, result.map( (data) => {
+        return {
+          content: data.content
+        };
+      }));
+    }
+  });
+};
+
+let beautifyContent = (content) => {
+  try {
+    let parsed = JSON.parse(content);
+    return parsed.map( (data) => { return data['항목'];});
+  } catch (error) {
+    return null;
+  }
+};
+
+app.get('/survey/participate', (req, res) => {
+  let questionnaireID = req.query['questionnaireID'];
+  getSurveyChoiceData(questionnaireID.split(':')[0], questionnaireID.split(':')[1], (err, result) => {
+    //JSON data will be sent to client
+    //styling will be done in client
+    //FIX ME
+    //result MUST have only one, but as of now due the lack of validation
+    //multiple of the same questionnaire exist
+    let parsed = beautifyContent( result[0].content );
+    res.render('surveyinputform', { content: JSON.stringify(parsed) });
+  });
+});
+
+app.post('/survey/participate', (req, res) => {});
 
 //add a new user to user DB
 app.post('/register', (req, res) => {
