@@ -3,7 +3,7 @@ let https = require('https');
 let express = require('express');
 let bodyParser = require('body-parser');
 let session = require('express-session');
-let csrf = require('csurf')()
+let csrf = require('csurf')();
 let fortune = require('./lib/fortune.js');
 let formidable = require('formidable');
 let credentials = require('./credentials.js');
@@ -44,16 +44,16 @@ const DB_NAME = "test";
 let getUserNameFromAuthID = (req) => {
   let nameWithPrefix = req.user.authId;
   return nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
-}
+};
 
 //multers disk storage settings
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, EXCEL_UPLOAD_DIRECTORY)
+    cb(null, EXCEL_UPLOAD_DIRECTORY);
   },
   filename: (req, file, cb) => {
     let datetimestamp = Date.now();
-    cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1])
+    cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1]);
   }
 });
 
@@ -63,17 +63,17 @@ let ensureAuthenticated = (req, res, next) => {
     return next();
   }
   res.redirect('login');
-}
+};
 
 let validateID = (userId) => {
   console.log("Fix Me: validateID");
   return true;
-}
+};
 
 let validatePassword = (passwd) => {
   console.log("Fix Me: validatePassword");
   return true;
-}
+};
 
 //authorization utilities
 let allow = (roles) => {
@@ -81,21 +81,21 @@ let allow = (roles) => {
           if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
           res.redirect(303, '/unauthorized');
   };
-}
+};
 
 // authorization helpers
 let customerOnly = (req, res, next) => {
   if(req.user && req.user.role==='customer') return next();
   // we want customer-only pages to know they need to logon
   res.redirect(303, '/unauthorized');
-}
+};
 
 let employeeOnly = (req, res, next) => {
   if(req.user && req.user.role==='employee') return next();
   // we want employee-only authorization failures to be "hidden", to
   // prevent potential hackers from even knowhing that such a page exists
   res.redirect(303, '/unauthorized');
-}
+};
 
 const app = express();
 
@@ -329,7 +329,7 @@ app.get('/vue-template', (req, res, next) => {
         }    
     }
     res.renderVue('main', data, vueOptions);
-})
+});
 
 app.get('/about',  (req, res) => {
   res.clearCookie('sangseoklim');
@@ -428,7 +428,7 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
         } catch (e){
             res.json({error_code:1,err_desc:"Corupted excel file"});
         }
-    })
+    });
 });
 
 //new commer register page
@@ -446,7 +446,7 @@ let getQuestionnaireList = (cb) => {
         return {
           name: data.name,
           version: data.version
-        }
+        };
       }));
     }
   });
@@ -504,7 +504,7 @@ let addNewUser = (authId, password, name, role, cb) => {
     cb
   };
 
-  crypto.randomBytes(16, function (err, salt) {
+  crypto.randomBytes(16, (err, salt) => {
     if (err) throw err;
     argon.hash(newUser.password, salt).then(hash => {
       let user = new User({
@@ -572,7 +572,7 @@ app.get('/fail', (req, res) => {
 
 app.get('/epic-fail', (req, res) => {
   process.nextTick( () => {
-    throw new Error("Disatster!");    
+    throw new Error("Disatster!");
   });
 });
 
