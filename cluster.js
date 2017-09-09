@@ -8,7 +8,7 @@ function startWorker() {
 if(cluster.isMaster){
     console.log(require('os').cpus());
     require('os').cpus().forEach(function(){
-	    startWorker();
+        startWorker();
     });
 
     // log any workers that disconnect; if a worker disconnects, it
