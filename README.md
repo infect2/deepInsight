@@ -1,8 +1,8 @@
 # Fully-fledged Web Application Scaldfolding
-## Node, Mongo, Express, Handlebars
-## Loging
-## email
-## RabbitMQ
+### Node, Mongo, Express, Handlebars
+### Loging
+### email
+### RabbitMQ
 
 ## Docker Build
 docker build -t deepinsight
