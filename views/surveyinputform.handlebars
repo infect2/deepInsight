@@ -1,22 +1,32 @@
 <h1>Please Choose What You Think</h1>
 <script>var content = {{{content}}};</script>
+<form name="surveyForm" class="form-horizontal localLoginForm" role="form" action="/survey/participate?form=survey" method="POST" onsubmit="return validateForm()">
+<input type="hidden" name="_csrf" value="{{_csrfToken}}">
+
 <div id="questionnaire">
 </div>
-<button> Submit </button>
-<button> Save </button>
+<button type="submit" class="btn btn-default">Submit</button>
+</form>
 {{#section 'jquery'}}
     <script>
         $(document).ready(function(){
-           var radioHtml = '1<input type="radio" name="editList%%%" value="always">';
-           radioHtml += '2<input type="radio" name="editList%%%" value="always">';
-           radioHtml += '3<input type="radio" name="editList%%%" value="always">';
-           radioHtml += '4<input type="radio" name="editList%%%" value="always">';
-           radioHtml += '5<input type="radio" name="editList%%%" value="always">';
+           var radioHtml = '1<input type="radio" name="editList%%%" value="HighlyUnlikely">';
+           radioHtml += '2<input type="radio" name="editList%%%" value="Unlikely">';
+           radioHtml += '3<input type="radio" name="editList%%%" value="NotSure">';
+           radioHtml += '4<input type="radio" name="editList%%%" value="Likely">';
+           radioHtml += '5<input type="radio" name="editList%%%" value="HighlyLikely">';
            content.forEach(function(data, idx){
              if(!!data && data.length>0) {
                  $("<div>" + data + " " + radioHtml.replace(/%%%/gi, idx.toString()) + "</div>").appendTo("#questionnaire");
                }
             });
         });
+        function validateForm() {
+            var x = document.forms["surveyForm"]["editList1"].value;
+            if (x == "") {
+                alert("All button MUST be selected");
+                return false;
+            }
+        }
     </script>
 {{/section}}

@@ -665,7 +665,9 @@ app.get('/survey/participate', (req, res) => {
   });
 });
 
-app.post('/survey/participate', (req, res) => {});
+app.post('/survey/participate', (req, res) => {
+  res.render('thankyou');
+});
 
 //add a new user to user DB
 app.post('/register', (req, res) => {
