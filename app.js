@@ -16,8 +16,12 @@ let mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 let emailService = email(credentials);
 
+//Model Schema Import
 let User = require('./models/user.js');
 let Questionnaire = require('./models/questionnaire.js');
+let Survey = require('./models/survey.js');
+let SurveyResult = require('./models/surveyResult.js');
+let ParticipantChoice = require('./models/participantChoice.js');
 
 let passport = require('passport');
 let LocalStrategy = require('passport-local').Strategy;
@@ -31,6 +35,9 @@ let amqp = require('amqp');
 let multer = require('multer');
 let xlstojson = require("xls-to-json-lc");
 let xlsxtojson = require("xlsx-to-json-lc");
+
+//programming utilities
+let Util = require('./lib/util.js');
 
 const MIN_PASSWORD_LENGTH = 4;
 const MAX_PASSWORD_LENGTH = 20;
@@ -495,6 +502,73 @@ let addNewQuestionnaire = (version, name, content, cb) => {
   });
 };
 
+app.get('/survey/success', (req, res) => {
+  res.render('surveycreatesuccess');
+});
+
+app.get('/survey/fail', (req, res) => {
+  res.render('surveycreatefail', { message: "MESSAGE SHOULD BE DETERMINED"});
+});
+
+//create survey from questionnaire
+app.get('/survey/create', (req,res) => {
+  res.render('createsurvey', { name: "alim com", version: "v0.99"});
+});
+
+// check if start date and date are correct
+let validateSurveyCreateReq = (req) => {
+  let ret;
+  ret = Util.compareDate(req.startDate, req.endDate);
+  if( !ret ) {
+    return {
+      ret: false,
+      message: "Start date is later than end date"
+    };
+  }
+
+  //More validate logic MUST BE ADDED
+  return {
+    ret: true,
+    message: "everything all right"
+  };
+};
+
+//add a new Survey into DB
+let addNewSurvey = (req, cb) => {
+  let survey = new Survey(req);
+  survey.save( (err) => {
+    if(err) {
+      cb(err, null);
+    } else {
+      cb(null, survey);
+    }
+  });
+};
+
+app.post('/survey/create', (req, res) => {
+  let newSurveyCreateRequest = {
+    surveyName: req.body.surveyName,
+    clientName: req.body.clientName,
+    questionnaireID: req.query['surveyname'] + ":" + req.query['version'],
+    startDate: req.body.startDate,
+    endDate: req.body.endDate,
+    state: "CREATED",
+    reportTemplate: "FIXEME"
+  }
+  let validated = validateSurveyCreateReq(newSurveyCreateRequest);
+  if(validated.ret == false) {
+    res.render('surveycreatefail', { message: validated.message });
+  } else {
+    addNewSurvey(newSurveyCreateRequest, (err, survey) => {
+      if( err ) {
+        res.render('surveycreatefail', { message: "please contact administrator" });
+      } else {
+        res.redirect(303, '/survey/success');
+      }
+    });
+  }
+});
+
 let addNewUser = (authId, password, name, role, cb) => {
   let newUser = {
     authId,
@@ -611,13 +685,13 @@ app.use((err, req,res, next) => {
 });
 
 let server;
-let options = {
+let serverSptions = {
   key: fs.readFileSync(__dirname + '/keys/deepinsight.pem'),
   cert: fs.readFileSync(__dirname + '/keys/deepinsight.crt')
 };
 
 let startServer = () => {
-  server = https.createServer(options, app).listen(app.get('port'), () => {
+  server = https.createServer(serverSptions, app).listen(app.get('port'), () => {
     console.log( 'Express started in ' + app.get('env') +
       ' mode on http://localhost:' + app.get('port') +
       '; press Ctrl-C to terminate.' );

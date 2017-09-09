@@ -3,9 +3,10 @@ let mongoose = require('mongoose');
 let surveySchema = mongoose.Schema({
     surveyName: String,
     clientName: String, //JSON type string
+    questionnaireID: String,
     startDate: Date,
     endDate: Date,
-    questionnaireID: String,
+    state: String, // CREATED(YET-TO-BE-STRATED) -> ONGOING -> DONE, PAUSED
     reportTemplate: String
 });
 
