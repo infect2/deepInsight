@@ -1,6 +1,8 @@
-# Online Survey Platform
-Coming Soon
-2017-08-13
+# Fully-fledged Web Application Scaldfolding
+## Node, Mongo, Express, Handlebars
+## Loging
+## email
+## RabbitMQ
 
 ## Docker Build
 docker build -t deepinsight
