@@ -630,7 +630,7 @@ app.get('/survey/list', (req, res) => {
 });
 
 let getSurveyChoiceData = (name, version, cb) => {
-  Questionnaire.find( { name: name, version: version }, function (err, result) {
+  Questionnaire.find( { name: name, version: version }, (err, result) => {
     if (err) {
       cb(err, null);
     } else {
@@ -665,8 +665,29 @@ app.get('/survey/participate', (req, res) => {
   });
 });
 
+let saveSurveyResult = (req, cb) => {
+  let surveyResult = new SurveyResult(req);
+  surveyResult.save(req, (err, result) => {
+    if( err ) {
+      cb(err, null);
+    } else {
+      cb(null, result);
+    }
+  });
+};
+
 app.post('/survey/participate', (req, res) => {
-  res.render('thankyou');
+  let userChoice = {
+    clientName: "NCSOFT",
+    questionnaireID: "alim comm:0.99",
+    clientChoice: [ "HighlyLikely ", "Likely" ].join(':'),
+    reportTemplate: "TO-BE-FIXED",
+    created: Date.now()
+  };
+
+  saveSurveyResult( userChoice, (err, result) => {
+    res.render('thankyou');
+  });
 });
 
 //add a new user to user DB
