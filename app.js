@@ -128,7 +128,8 @@ let serviceRequestDoneHandler = (headers) => {
     let obj = serviceReqQueue.pop();
     if(obj.serviceReq.headers.surveyID == headers.surveyID) {
       if(headers.error == 'success') {
-        obj.res.render('report_html');
+        // obj.res.render('report_html');
+        obj.res.redirect(301, '/report/index.html')
       } else {
         obj.res.render('404');
       }
