@@ -120,6 +120,25 @@ app.set('loggerPort', process.env.LOGGER.split(':')[1] || '24224');
 let rabbit = amqp.createConnection({ host: app.get('rabbitmqIP') });
 
 let messageExchange;
+let serviceReqQueue = [];
+let serviceRequestDoneHandler = (headers) => {
+  let tmpQueue = [];
+  let length = serviceReqQueue.length;
+  for(let i=0; i<length; i++) {
+    let obj = serviceReqQueue.pop();
+    if(obj.serviceReq.headers.surveyID == headers.surveyID) {
+      if(headers.error == 'success') {
+        obj.res.render('report_html');
+      } else {
+        obj.res.render('404');
+      }
+    } else {
+      tmpQueue.push(obj);
+    }
+  }
+  //queue swapping
+  serviceReqQueue = tmpQueue;
+};
 rabbit.on('ready', () => {
   console.log('RabbitMQ is ready');
   rabbit.exchange('my-first-exchange', {type:'direct', autoDelete: false}, (ex) => {
@@ -130,9 +149,8 @@ rabbit.on('ready', () => {
     q.bind('my-first-exchange', 'first-queue');
     q.subscribe( (message, headers, deliveryInfo, messageObject) => {
       // console.log(message);
-      // console.log(headers);
-      // console.log(deliveryInfo);
-      // console.log(messageObject);
+      console.log(headers);
+      serviceRequestDoneHandler(headers);
     });
   });
 });
@@ -165,10 +183,10 @@ app.use(expressVueMiddleware);
 
 app.set('view engine','handlebars');
 
-app.use((req,res,next) => {
-  messageExchange.publish('first-queue', {message: req.url});
-  next();
-});
+// app.use((req,res,next) => {
+//   messageExchange.publish('first-queue', {message: req.url});
+//   next();
+// });
 
 // use domains for better error handling
 app.use((req, res, next) => {
@@ -336,7 +354,7 @@ app.get('/vue-template', (req, res, next) => {
                 { name:'twitter:title', content: 'Page Title'},
             ]
         }
-    }
+    };
     res.renderVue('main', data, vueOptions);
 });
 
@@ -429,7 +447,7 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
             }, function(err, result){
                 if(err) {
                     return res.json({error_code:1,err_desc:err, data: null});
-                } 
+                }
                 addNewQuestionnaire("0.99", "alim com", result, (err, questionnaire)=>{
                   res.json({error_code:err,err_desc:null, data: result});
                 });
@@ -558,9 +576,9 @@ app.post('/survey/create', (req, res) => {
     endDate: req.body.endDate,
     state: "CREATED",
     reportTemplate: "FIXEME"
-  }
+  };
   let validated = validateSurveyCreateReq(newSurveyCreateRequest);
-  if(validated.ret == false) {
+  if(validated.ret === false) {
     res.render('surveycreatefail', { message: validated.message });
   } else {
     addNewSurvey(newSurveyCreateRequest, (err, survey) => {
@@ -646,8 +664,11 @@ let getSurveyChoiceData = (name, version, cb) => {
 let beautifyContent = (content) => {
   try {
     let parsed = JSON.parse(content);
+    //TO-BE-FIXED
+    //Hard-coding MUST BE REMOVED
     return parsed.map( (data) => { return data['항목'];});
   } catch (error) {
+    console.log(content);
     return null;
   }
 };
@@ -677,6 +698,7 @@ let saveSurveyResult = (req, cb) => {
 };
 
 app.post('/survey/participate', (req, res) => {
+  //TO-BE-FIXED
   let userChoice = {
     clientName: "NCSOFT",
     questionnaireID: "alim comm:0.99",
@@ -688,6 +710,30 @@ app.post('/survey/participate', (req, res) => {
   saveSurveyResult( userChoice, (err, result) => {
     res.render('thankyou');
   });
+});
+
+app.get('/survey/report', (req, res) => {
+  let surveyID = req.query['surveyID'];
+  let questionnaireID = req.query['questionnaireID'];
+  let participantID = req.query['participantID'];
+  let serviceReq = {
+    headers : {
+      questionnaireID: questionnaireID,
+      surveyID: surveyID,
+      type: 'html',
+      outputPath: '/tmp/'
+      // outputPath: '/home/sangseoklim/deepInsight/public/'
+    }
+  };
+  //send report generate request
+  //wait for response
+  //on the reception, pop from serviceReqQueue, then process by sending response to client
+  serviceReqQueue.push({
+    req,
+    res,
+    serviceReq
+  });
+  messageExchange.publish('first-queue', {message: "generate report"}, serviceReq);
 });
 
 //add a new user to user DB

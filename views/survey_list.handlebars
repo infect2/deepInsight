@@ -5,6 +5,7 @@
         Client Name: {{this.clientName}}
         Survey Name: {{this.surveyName}}
         State: {{this.state}}
-        <a href="/survey/participate?questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default">Participate Survey</a>
+        <a href="/survey/participate?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default">Participate Survey</a>
+        <a href="/survey/report?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default">See Report</a>
     </div>
 {{/each}}
