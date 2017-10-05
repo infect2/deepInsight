@@ -1,4 +1,4 @@
-# Fully-fledged Web Application Scaldfolding
+# Fully-fledged Web Application Scafffolding
 ### Node, Mongo, Express, Handlebars
 ### Loging
 ### email
