@@ -1,0 +1,22 @@
+{
+  "name": "public",
+  "homepage": "https://github.com/infect2/deepInsight",
+  "authors": [
+    "Sang Seok Lim <sangseok.lim@gmail.com>"
+  ],
+  "description": "deepinsight static",
+  "main": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "Bootflat": "^2.0.4",
+    "jquery": "^3.2.1",
+    "bootstrap": "^3.3.7"
+  }
+}
