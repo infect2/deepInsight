@@ -1,11 +1,19 @@
-<h1>Survey List</h1>
+<h3>Ongoing Survey List</h3>
+<div class="row">
+    <div class="col-sm-1"> Index</div>
+    <div class="col-sm-2"> Client Name</div>
+    <div class="col-sm-5"> Survey Name</div>
+    <div class="col-sm-2"> State</div>
+    <div class="col-sm-1">  </div>
+    <div class="col-sm-1">  </div>
+</div>
 {{#each survey}}
-    <div>
-        {{@index}}:
-        Client Name: {{this.clientName}}
-        Survey Name: {{this.surveyName}}
-        State: {{this.state}}
-        <a href="/survey/participate?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default">Participate Survey</a>
-        <a href="/survey/report?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default">See Report</a>
+    <div class="row">
+        <div class="col-sm-1"> {{@index}}</div>
+        <div class="col-sm-2"> {{this.clientName}} </div>
+        <div class="col-sm-5"> {{this.surveyName}} </div>
+        <div class="col-sm-2"> {{this.state}} </div>
+        <div class="col-sm-1"> <a href="/survey/participate?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN">설문 참여</a> </div>
+        <div class="col-sm-1"> <a href="/survey/report?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN">보고서 보기</a> </div>
     </div>
 {{/each}}

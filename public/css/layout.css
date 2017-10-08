@@ -29,3 +29,11 @@
 .choice .choiceLabel {
     padding-left:25px;
 }
+
+.createSurvey .formContainer {
+    padding-top: 30px;
+}
+
+footer {
+    margin-left: 20px;
+}

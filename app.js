@@ -419,14 +419,6 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
                         if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
                             return callback(new Error('Wrong extension type'));
                         }
-                        // csrf((req, res, error)=>{
-                        //   if(error) {
-                        //     console.log('CSRF error');
-                        //     return callback(new Error('Mal-formed data'));
-                        //   } else {
-                        //     callback(null,true);
-                        //   }
-                        // });
                         callback(null, true);
                     }
                 }).single('file');
@@ -462,7 +454,7 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
                 });
             });
         } catch (e){
-            res.json({error_code:1,err_desc:"Corupted excel file"});
+            res.json({error_code:1,err_desc:"Corrupted excel file"});
         }
     });
 });
@@ -499,7 +491,11 @@ let getQuestionnaireList = (cb) => {
 
 app.get('/questionnaire/list', (req, res) => {
   getQuestionnaireList((err, result) => {
-    res.render('questionnaire_list', {questionnaire: result});
+    res.render('questionnaire_list', {
+      questionnaire: result,
+      signedin: req.user,
+      username: getUserNameFromAuthID(req)
+    });
   });
 });
 
@@ -516,7 +512,11 @@ let getContentFromQuestionnaire = (version, name, cb) => {
 
 app.get('/questionnaire/showContent', (req, res) => {
   getContentFromQuestionnaire( req.query['version'], req.query['name'], (err, result) => {
-    res.render('questionnaire_detail', {content: result});
+    res.render('questionnaire_detail', {
+      content: result,
+      signedin: req.user,
+      username: getUserNameFromAuthID(req)
+    });
   });
 });
 
@@ -552,7 +552,12 @@ app.get('/survey/fail', (req, res) => {
 app.get('/survey/create', (req,res) => {
   let name = req.query['name'];
   let version = req.query['version'];
-  res.render('createsurvey', { name, version });
+  res.render('createsurvey', {
+    name: name,
+    version: version,
+    signedin: req.user,
+    username: getUserNameFromAuthID(req)
+  });
 });
 
 // check if start date and date are correct

@@ -1,8 +1,17 @@
-<h1>Questionnaire</h1>
+<h3>Questionnaire</h3>
+<div class="row">
+    <div class="col-sm-1"> Index </div>
+    <div class="col-sm-2"> 질문원천데이터 </div>
+    <div class="col-sm-3"> Version</div>
+    <div class="col-sm-3"></div>
+    <div class="col-sm-3"></div>
+</div>
 {{#each questionnaire}}
-    <div>
-        {{@index}}: Name is {{this.name}}. Version is {{this.version}}
-        <a href="/questionnaire/showContent?version={{this.version}}&name={{this.name}}" class="btn btn-default">See All Questions</a>
-        <a href="/survey/create?version={{this.version}}&name={{this.name}}" class="btn btn-default">Mage New Survey</a>
+    <div class="row">
+        <div class="col-sm-1"> {{@index}} </div>
+        <div class="col-sm-2"> {{this.name}} </div>
+        <div class="col-sm-3"> {{this.version}} </div>
+        <div class="col-sm-3"> <a href="/questionnaire/showContent?version={{this.version}}&name={{this.name}}" class="btn btn-default">See All Questions</a> </div>
+        <div class="col-sm-3"> <a href="/survey/create?version={{this.version}}&name={{this.name}}" class="btn btn-default">Mage New Survey</a> </div>
     </div>
 {{/each}}
