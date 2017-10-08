@@ -51,7 +51,7 @@ mongoose.Promise = Promise;
 // 'deepinsight:' is a prefix for our user ID storage rule
 // Thus remove it from authId before sending it to user
 let getUserNameFromAuthID = (req) => {
-  if( req.user.authId === undefined ) return '';
+  if( req.user === undefined || req.user.authId === undefined ) return;
   let nameWithPrefix = req.user.authId;
   return nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
 };
@@ -382,9 +382,7 @@ app.get('/login', (req, res) => {
     return;
   }
   res.render('login', { 
-    csrf: 'CSRF token goes here',
-    signedin: req.user,
-    username: 'fixme'
+    csrf: 'CSRF token goes here'
   });
 });
 
@@ -404,7 +402,7 @@ app.post('/login',
 app.get('/logout', (req, res) => {
   req.logout();
   req.session.destroy();
-  res.redirect("/login", { signedin: false });
+  res.redirect("/login");
 });
 
 app.get('/upload', ensureAuthenticated, (req,res) => {
