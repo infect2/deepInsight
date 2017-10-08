@@ -1,0 +1,31 @@
+.navbar-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border: none;
+    border-radius: 0;
+    width: 100%;
+    z-index: 2000;
+}
+
+.container {
+    width: 80%;
+    padding:50px 0 110px;
+}
+
+.external-login-button, .register-button {
+    margin: auto;
+    width: 30%;
+}
+
+#loginForm {
+    padding-top: 50px;
+}
+
+.choice {
+    font-size: 1.2em;
+}
+
+.choice .choiceLabel {
+    padding-left:25px;
+}

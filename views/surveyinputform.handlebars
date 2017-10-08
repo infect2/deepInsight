@@ -10,14 +10,14 @@
 {{#section 'jquery'}}
     <script>
         $(document).ready(function(){
-           var radioHtml = '1<input type="radio" name="editList%%%" value="HighlyUnlikely">';
-           radioHtml += '2<input type="radio" name="editList%%%" value="Unlikely">';
-           radioHtml += '3<input type="radio" name="editList%%%" value="NotSure">';
-           radioHtml += '4<input type="radio" name="editList%%%" value="Likely">';
-           radioHtml += '5<input type="radio" name="editList%%%" value="HighlyLikely">';
+           var radioHtml = 'Highly Unlikely <input type="radio" name="editList%%%" value="HighlyUnlikely">';
+           radioHtml += '<span class="choiceLabel">Unlikely</span> <input type="radio" name="editList%%%" value="Unlikely">';
+           radioHtml += '<span class="choiceLabel">NotSure</span> <input type="radio" name="editList%%%" value="NotSure">';
+           radioHtml += '<span class="choiceLabel">Likely</span> <input type="radio" name="editList%%%" value="Likely">';
+           radioHtml += '<span class="choiceLabel">Highly Likely</span> <input type="radio" name="editList%%%" value="HighlyLikely">';
            content.forEach(function(data, idx){
              if(!!data && data.length>0) {
-                 $("<div>" + data + " " + radioHtml.replace(/%%%/gi, idx.toString()) + "</div>").appendTo("#questionnaire");
+                 $("<div> <span class='question'><h5>" + data + "</h5></span> <span class='choice'>" + radioHtml.replace(/%%%/gi, idx.toString()) + "</span><hr></div>").appendTo("#questionnaire");
                }
             });
         });
