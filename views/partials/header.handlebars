@@ -7,13 +7,17 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">DeepInsight</a>
+      <a class="navbar-brand" href="/account">DeepInsight</a>
     </div>
     <div class="collapse navbar-collapse" id="global-navbar">
-      <p class="navbar-text">Please Sign in</p>
+        {{#if signedin}}
+            <p class="navbar-text">Signed in as {{username}}</p>
+        {{else}}
+            <p class="navbar-text">Please Sign in</p>
+        {{/if}}
       <ul class="nav navbar-nav navbar-right">
         <li><a class="nav-link current" href="/login">Login</a></li>
-        <li><a class="nav-link" href="/login">Request Survey</a></li>
+        <li><a class="nav-link" href="/client/request">Request Survey</a></li>
         <li><a class="nav-link" href="/survey/list">Participate Survey</a></li>
         <li><a class="nav-link" href="/about">About Us</a></li>
       </ul>

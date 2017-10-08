@@ -51,6 +51,7 @@ mongoose.Promise = Promise;
 // 'deepinsight:' is a prefix for our user ID storage rule
 // Thus remove it from authId before sending it to user
 let getUserNameFromAuthID = (req) => {
+  if( req.user.authId === undefined ) return '';
   let nameWithPrefix = req.user.authId;
   return nameWithPrefix.slice(AUTHID_PREFIX.length, nameWithPrefix.length);
 };
@@ -340,7 +341,10 @@ auth.registerRoutes();
 
 app.get('/',  (req, res) => {
   res.cookie('sangseoklim', "handsome", { signed: true });
-  res.render('home');
+  res.render('home', {
+    signedin: req.user,
+    username: getUserNameFromAuthID(req)
+  });
 });
 
 app.get('/vue-template', (req, res, next) => {
@@ -363,7 +367,9 @@ app.get('/about',  (req, res) => {
   res.clearCookie('sangseoklim');
   res.render('about', {
     fortune: fortune.getFortune(),
-    pageTestScript: 'qa/tests-about.js'
+    pageTestScript: 'qa/tests-about.js',
+    signedin: req.user,
+    username: getUserNameFromAuthID(req)
   });
 });
 
@@ -372,10 +378,14 @@ app.get('/login', (req, res) => {
   if(!!req.user) {
     //user is already in logined
     //logout first
-    res.render('logout', { username: getUserNameFromAuthID(req) });
+    res.render('logout', { signedin: !!req.user, username: getUserNameFromAuthID(req) });
     return;
   }
-  res.render('login', { csrf: 'CSRF token goes here' });
+  res.render('login', { 
+    csrf: 'CSRF token goes here',
+    signedin: req.user,
+    username: 'fixme'
+  });
 });
 
 //FIX ME
@@ -394,7 +404,7 @@ app.post('/login',
 app.get('/logout', (req, res) => {
   req.logout();
   req.session.destroy();
-  res.redirect("/login");
+  res.redirect("/login", { signedin: false });
 });
 
 app.get('/upload', ensureAuthenticated, (req,res) => {
@@ -462,6 +472,15 @@ app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) 
 //new commer register page
 app.get('/register', (req, res) => {
   res.render('register', { csrf: 'CSRF token goes here' });
+});
+
+//new commer register page
+app.get('/client/request', (req, res) => {
+  res.render('clientrequest', {
+    csrf: 'CSRF token goes here',
+    signedin: req.user,
+    username: getUserNameFromAuthID(req)
+  });
 });
 
 //show questionnaire list
@@ -644,7 +663,11 @@ let getSurveyList = (cb) => {
 
 app.get('/survey/list', (req, res) => {
   getSurveyList((err, result) => {
-    res.render('survey_list', {survey: result});
+    res.render('survey_list', {
+      survey: result,
+      signedin: req.user,
+      username: getUserNameFromAuthID(req)
+    });
   });
 });
 
@@ -683,7 +706,11 @@ app.get('/survey/participate', (req, res) => {
     //result MUST have only one, but as of now due the lack of validation
     //multiple of the same questionnaire exist
     let parsed = beautifyContent( result[0].content );
-    res.render('surveyinputform', { content: JSON.stringify(parsed) });
+    res.render('surveyinputform', {
+      content: JSON.stringify(parsed),
+      signedin: req.user,
+      username: getUserNameFromAuthID(req)
+    });
   });
 });
 
@@ -805,7 +832,7 @@ app.get('/unauthorized', (req, res) => {
 
 // customer routes
 app.get('/account', allow('customer,employee'), (req, res) => {
-  res.render('account', { username: getUserNameFromAuthID(req) });
+  res.render('account', { signedin: req.user, username: getUserNameFromAuthID(req) });
 });
 
 // 404 not found

@@ -10,7 +10,7 @@
 
 .container {
     width: 80%;
-    padding:50px 0 110px;
+    padding-top:50px;
 }
 
 .external-login-button, .register-button {
