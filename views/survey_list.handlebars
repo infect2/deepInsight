@@ -13,7 +13,7 @@
         <div class="col-sm-2"> {{this.clientName}} </div>
         <div class="col-sm-5"> {{this.surveyName}} </div>
         <div class="col-sm-2"> {{this.state}} </div>
-        <div class="col-sm-1"> <a href="/survey/participate?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN">설문 참여</a> </div>
-        <div class="col-sm-1"> <a href="/survey/report?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN">보고서 보기</a> </div>
+        <div class="col-sm-1"> <a href="/survey/participate?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default btn-xs">설문 참여</a> </div>
+        <div class="col-sm-1"> <a href="/survey/report?surveyID={{this.id}}&questionnaireID={{this.questionnaireID}}&participantID=CLIENTTOKEN" class="btn btn-default btn-xs">보고서 보기</a> </div>
     </div>
 {{/each}}
