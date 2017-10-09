@@ -47,3 +47,57 @@ footer {
 .account-page img {
     width: 100%;
 }
+
+.account-page .nav-tabs li a {
+    color: #777;
+}
+
+.about-page .panel {
+    border: 1px solid #f4511e; 
+    border-radius:0;
+    transition: box-shadow 0.5s;
+}
+
+.about-page  .panel:hover {
+    box-shadow: 5px 0px 40px rgba(0,0,0, .2);
+}
+
+.about-page .panel-footer .btn:hover {
+    border: 1px solid #f4511e;
+    background-color: #fff !important;
+    color: #f4511e;
+}
+
+.about-page  .panel-heading {
+    color: #fff !important;
+    background-color: #f4511e !important;
+    padding: 25px;
+    border-bottom: 1px solid transparent;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
+
+.about-page .panel-footer {
+    background-color: #fff !important;
+}
+
+.about-page .panel-footer h3 {
+    font-size: 32px;
+}
+
+.about-page .panel-footer h4 {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.about-page .panel-footer .btn {
+    margin: 15px 0;
+    background-color: #f4511e;
+    color: #fff;
+}
+
+.download-page {
+    padding-top: 50px;
+}

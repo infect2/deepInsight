@@ -1,0 +1,17 @@
+<div class="download-page">
+  <p>The download should start shortly. If it doesn't, click
+  <a data-auto-download href="{{downloadLink}}">here</a>.</p>
+</div>
+
+{{#section 'jquery'}}
+<script>
+$(function() {
+  $('a[data-auto-download]').each(function(){
+    var $this = $(this);
+    setTimeout(function() {
+      window.location = $this.attr('href');
+    }, 2000);
+  });
+});
+</script>
+{{/section}}

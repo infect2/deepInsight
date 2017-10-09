@@ -36,6 +36,8 @@ let multer = require('multer');
 let xlstojson = require("xls-to-json-lc");
 let xlsxtojson = require("xlsx-to-json-lc");
 
+const { exec } = require('child_process');
+
 //programming utilities
 let Util = require('./lib/util.js');
 
@@ -45,6 +47,7 @@ const AUTHID_PREFIX = 'deepinsight:';
 const EXCEL_UPLOAD_DIRECTORY = './uploads/';
 const LOGGER_TIMEOUT = 3.0;
 const DB_NAME = "test";
+const RABBITMQ_MESSAGEQUEUE = "gitbook-generator";
 
 mongoose.Promise = Promise;
 
@@ -88,8 +91,8 @@ let validatePassword = (passwd) => {
 //authorization utilities
 let allow = (roles) => {
   return (req, res, next) => {
-          if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
-          res.redirect(303, '/unauthorized');
+    if(req.user && roles.split(',').indexOf(req.user.role)!==-1) return next();
+    res.redirect(303, '/unauthorized');
   };
 };
 
@@ -117,6 +120,30 @@ app.set('rabbitmqIP', process.env.RABBITMQ || '172.17.0.8');
 app.set('loggerIP', process.env.LOGGER.split(':')[0] || '172.17.0.7');
 app.set('loggerPort', process.env.LOGGER.split(':')[1] || '24224');
 
+const pdfFileName = 'report.pdf';
+const moveExecCommand = 'mv';
+
+let moveReportFile2PublicDir = (src, dest, format, cb) => {
+  let cmd;
+
+  if( format == 'html') {
+    cmd = moveExecCommand + ' ' + src + ' ' + dest + 'report';
+  } else if ( format == 'pdf' ) {
+    cmd = moveExecCommand + ' ' + src + ' ' + dest;
+  } else {
+    return cb(new Error('Invalid Report Type'), '', 'Invalid Report Type');
+  }
+  //whitespace is removed according to naming convention of template directory
+  // cmd += req.questionnaireID.replace(/\s/g, '').replace(/:/g, '-');
+  console.log(cmd);
+  exec(cmd, (error, stdout, stderr) => {
+    console.log(error);
+    console.log(stdout);
+    console.log(stderr);
+    cb(error, stdout, stderr);
+  });
+};
+
 //RabbitMQ integration
 let rabbit = amqp.createConnection({ host: app.get('rabbitmqIP') });
 
@@ -130,7 +157,18 @@ let serviceRequestDoneHandler = (headers) => {
     if(obj.serviceReq.headers.surveyID == headers.surveyID) {
       if(headers.error == 'success') {
         // obj.res.render('report_html');
-        obj.res.redirect(301, '/report/index.html');
+        if ( obj.serviceReq.headers.type === 'html' ) {
+          moveReportFile2PublicDir('/tmp/report', '/home/sangseoklim/deepInsight/public/', 'html', (error, stdout, stderr) => {
+            obj.res.redirect(301, '/report/index.html');
+          });
+        } else if ( obj.serviceReq.headers.type === 'pdf' ) {
+          moveReportFile2PublicDir('/tmp/' + pdfFileName, '/home/sangseoklim/deepInsight/public/', 'pdf', (error, stdout, stderr) => {
+            // obj.res.redirect(301, '/report/index.html');
+            obj.res.render('download_pdf', { downloadLink: '/report.pdf' });
+          });
+        } else {
+          obj.res.render('404');
+        }
       } else {
         obj.res.render('404');
       }
@@ -257,6 +295,9 @@ switch(app.get('env')){
     console.log("development mode");
     app.use(require('morgan')('dev'));
     mongoose.connect("mongodb://" + app.get('mongodbIP') + ':' + app.get('mongodbPort') + '/' + DB_NAME, mongoOpts);
+    app.use(require('express-logger')({
+      path: __dirname + '/log/requests.log'
+    }));
     break;
   case 'production':
     console.log("production mode");
@@ -310,11 +351,11 @@ app.use(compression());
 
 // flash message middleware
 app.use((req, res, next) => {
-        // if there's a flash message, transfer
-        // it to the context, then clear it
-        res.locals.flash = req.session.flash;
-        delete req.session.flash;
-        next();
+  // if there's a flash message, transfer
+  // it to the context, then clear it
+  res.locals.flash = req.session.flash;
+  delete req.session.flash;
+  next();
 });
 
 // cluster
@@ -339,7 +380,7 @@ auth.init();
 // now we can specify our auth routes:
 auth.registerRoutes();
 
-app.get('/',  (req, res) => {
+app.get('/', (req, res) => {
   res.cookie('sangseoklim', "handsome", { signed: true });
   res.render('home', {
     signedin: req.user,
@@ -348,19 +389,19 @@ app.get('/',  (req, res) => {
 });
 
 app.get('/vue-template', (req, res, next) => {
-    let data = {
-        otherData: 'Something Else'
-    };
-    let vueOptions = {
-        head: {
-            title: 'Page Title',
-            meta: [
-                { property:'og:title', content: 'Page Title'},
-                { name:'twitter:title', content: 'Page Title'},
-            ]
-        }
-    };
-    res.renderVue('main', data, vueOptions);
+  let data = {
+      otherData: 'Something Else'
+  };
+  let vueOptions = {
+    head: {
+        title: 'Page Title',
+        meta: [
+            { property:'og:title', content: 'Page Title'},
+            { name:'twitter:title', content: 'Page Title'},
+        ]
+    }
+  };
+  res.renderVue('main', data, vueOptions);
 });
 
 app.get('/about',  (req, res) => {
@@ -381,7 +422,7 @@ app.get('/login', (req, res) => {
     res.render('logout', { signedin: !!req.user, username: getUserNameFromAuthID(req) });
     return;
   }
-  res.render('login', { 
+  res.render('login', {
     csrf: 'CSRF token goes here'
   });
 });
@@ -412,51 +453,51 @@ app.get('/upload', ensureAuthenticated, (req,res) => {
 // multipart upload should be put in in front of crsf verification middleware
 // please refere to the issue in https://github.com/expressjs/csurf/issues/58
 app.post('/upload', allow('customer,employee'), ensureAuthenticated, (req, res) => {
-    let exceltojson;
-    let upload = multer({ //multer settings
-                    storage: storage,
-                    fileFilter : function(req, file, callback) { //file filter
-                        if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
-                            return callback(new Error('Wrong extension type'));
-                        }
-                        callback(null, true);
+  let exceltojson;
+  let upload = multer({ //multer settings
+                  storage: storage,
+                  fileFilter : function(req, file, callback) { //file filter
+                    if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
+                        return callback(new Error('Wrong extension type'));
                     }
-                }).single('file');
-    upload(req,res, (err) => {
-        if(err){
-             res.json({error_code:1,err_desc:err});
-             return;
-        }
-        /** Multer gives us file info in req.file object */
-        if(!req.file){
-            res.json({error_code:1,err_desc:"No file passed"});
-            return;
-        }
-        /** Check the extension of the incoming file and 
-         *  use the appropriate module
-         */
-        if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
-            exceltojson = xlsxtojson;
-        } else {
-            exceltojson = xlstojson;
-        }
-        try {
-            exceltojson({
-                input: req.file.path,
-                output: null, //since we don't need output.json
-                lowerCaseHeaders:true
-            }, function(err, result){
-                if(err) {
-                    return res.json({error_code:1,err_desc:err, data: null});
-                }
-                addNewQuestionnaire("0.99", "alim com", result, (err, questionnaire)=>{
-                  res.json({error_code:err,err_desc:null, data: result});
-                });
+                    callback(null, true);
+                  }
+              }).single('file');
+  upload(req,res, (err) => {
+    if(err){
+       res.json({error_code:1,err_desc:err});
+       return;
+    }
+    /** Multer gives us file info in req.file object */
+    if(!req.file){
+      res.json({error_code:1,err_desc:"No file passed"});
+      return;
+    }
+    /** Check the extension of the incoming file and 
+     *  use the appropriate module
+     */
+    if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
+      exceltojson = xlsxtojson;
+    } else {
+      exceltojson = xlstojson;
+    }
+    try {
+        exceltojson({
+            input: req.file.path,
+            output: null, //since we don't need output.json
+            lowerCaseHeaders:true
+        }, function(err, result){
+            if(err) {
+                return res.json({error_code:1,err_desc:err, data: null});
+            }
+            addNewQuestionnaire("0.99", "alim com", result, (err, questionnaire)=>{
+              res.json({error_code:err,err_desc:null, data: result});
             });
-        } catch (e){
-            res.json({error_code:1,err_desc:"Corrupted excel file"});
-        }
-    });
+        });
+    } catch (e){
+        res.json({error_code:1,err_desc:"Corrupted excel file"});
+    }
+  });
 });
 
 //new commer register page
@@ -729,11 +770,17 @@ let saveSurveyResult = (req, cb) => {
 };
 
 app.post('/survey/participate', (req, res) => {
-  //TO-BE-FIXED
+  var copy = Object.assign( req.body );
+  if (!!copy._csrf) {
+    delete copy._csrf;
+  }
+  var userData = JSON.stringify(copy);
+  //HARD coded lines should be replaced
+  console.log("/survey/participate yet to be implemented");
   let userChoice = {
     clientName: "NCSOFT",
     questionnaireID: "alim comm:0.99",
-    clientChoice: [ "HighlyLikely ", "Likely" ].join(':'),
+    clientChoice: userData,
     reportTemplate: "TO-BE-FIXED",
     created: Date.now()
   };
@@ -747,11 +794,12 @@ app.get('/survey/report', (req, res) => {
   let surveyID = req.query['surveyID'];
   let questionnaireID = req.query['questionnaireID'];
   let participantID = req.query['participantID'];
+  let format = req.query['format'];
   let serviceReq = {
     headers : {
       questionnaireID: questionnaireID,
       surveyID: surveyID,
-      type: 'html',
+      type: format,
       outputPath: '/tmp/'
       // outputPath: '/home/sangseoklim/deepInsight/public/'
     }
@@ -822,10 +870,10 @@ app.get('/epic-fail', (req, res) => {
 //REST API Example
 app.get('/api/purpose', (req, res) => {
   res.json({
-          name: "deepinsight",
-          id: 12345,
-          description: "online survey",
-          location: "South Korea",
+    name: "deepinsight",
+    id: 12345,
+    description: "online survey",
+    location: "South Korea",
   });
 });
 
